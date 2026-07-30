@@ -1,0 +1,201 @@
+name: Build GirtelLeaf Images
+
+# Fork-only workflow. Keep this on the private GirtelLeaf branch and do not
+# include it in pull requests to ayaka-notes/ayakaleaf-pro.
+on:
+  push:
+    branches:
+      - girtelleaf/server-pro
+    tags:
+      - 'girtelleaf-v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Image tag to publish, for example 5.4-girtel.1'
+        required: false
+        type: string
+      push_latest:
+        description: 'Also publish the latest tag'
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  GHCR_REGISTRY: ghcr.io
+  REGISTRY_IMAGE: ghcr.io/${{ github.repository_owner }}/girtelleaf
+  BASE_IMAGE: ghcr.io/${{ github.repository_owner }}/girtelleaf-base
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      image_version: ${{ steps.version.outputs.image_version }}
+      base_build_tag: ${{ steps.version.outputs.base_build_tag }}
+      publish_latest: ${{ steps.version.outputs.publish_latest }}
+    steps:
+      - name: Resolve image version
+        id: version
+        shell: bash
+        run: |
+          short_sha="${GITHUB_SHA::12}"
+          ref_name="${GITHUB_REF_NAME}"
+          image_version=""
+
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ inputs.version }}" ]]; then
+            image_version="${{ inputs.version }}"
+          elif [[ "${GITHUB_REF}" == refs/tags/girtelleaf-v* ]]; then
+            image_version="${ref_name#girtelleaf-v}"
+          else
+            safe_ref="$(echo "$ref_name" | tr '/[:upper:]' '-[:lower:]' | tr -cd 'a-z0-9_.-')"
+            image_version="${safe_ref}-${short_sha}"
+          fi
+
+          publish_latest="false"
+          if [[ "${GITHUB_REF}" == "refs/heads/girtelleaf/server-pro" ]]; then
+            publish_latest="true"
+          fi
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.push_latest }}" == "true" ]]; then
+            publish_latest="true"
+          fi
+
+          echo "image_version=${image_version}" >> "$GITHUB_OUTPUT"
+          echo "base_build_tag=build-${short_sha}-${GITHUB_RUN_ID}" >> "$GITHUB_OUTPUT"
+          echo "publish_latest=${publish_latest}" >> "$GITHUB_OUTPUT"
+
+  build_app:
+    runs-on: ubuntu-latest
+    needs: prepare
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.GHCR_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Sync yarn.lock and prepare build context
+        run: |
+          docker run --rm -v "$(pwd)":/workspace -w /workspace node:24.14.1 sh -c "corepack enable && yarn install --mode=update-lockfile"
+
+          patch_dir=$(printf '%s\n' services/web/locales/locales_patches/v*/ | sort -V | tail -n1)
+          if [ -d "$patch_dir" ]; then
+            echo "Applying locale patch: $patch_dir"
+            cp "$patch_dir"*.json services/web/locales/
+          else
+            echo "No locale patch directory found; skipping"
+          fi
+
+          docker run --rm -v "$(pwd)/services/web/":/overleaf/services/web -w /overleaf/services/web ghcr.io/ayaka-notes/overleaf-pro/dev:webpack yarn run extract-translations
+          cp server-ce/.dockerignore .dockerignore
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker metadata for GirtelLeaf
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY_IMAGE }}
+          tags: |
+            type=raw,value=${{ needs.prepare.outputs.image_version }}
+            type=raw,value=latest,enable=${{ needs.prepare.outputs.publish_latest == 'true' }}
+            type=sha,prefix=sha-
+          labels: |
+            org.opencontainers.image.title=GirtelLeaf
+            org.opencontainers.image.description=GirtelLeaf, a custom Ayakaleaf Pro/Overleaf distribution
+
+      - name: Build and push base image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./server-ce/Dockerfile-base
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ${{ env.BASE_IMAGE }}:${{ needs.prepare.outputs.base_build_tag }}
+            ${{ env.BASE_IMAGE }}:${{ needs.prepare.outputs.image_version }}
+          cache-from: type=gha,scope=girtelleaf-base
+          cache-to: type=gha,mode=max,scope=girtelleaf-base
+          push: true
+          provenance: false
+          sbom: false
+
+      - name: Build and push GirtelLeaf image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./server-ce/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          build-args: |
+            OVERLEAF_BASE_TAG=${{ env.BASE_IMAGE }}:${{ needs.prepare.outputs.base_build_tag }}
+          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha,scope=girtelleaf-app
+          cache-to: type=gha,mode=max,scope=girtelleaf-app
+          push: true
+          provenance: false
+          sbom: false
+
+      - name: Inspect GirtelLeaf image
+        run: |
+          docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.image_version }}
+
+  build_git_bridge:
+    runs-on: ubuntu-latest
+    needs: prepare
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.GHCR_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker metadata for GirtelLeaf Git Bridge
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY_IMAGE }}/git-bridge
+          tags: |
+            type=raw,value=${{ needs.prepare.outputs.image_version }}
+            type=raw,value=latest,enable=${{ needs.prepare.outputs.publish_latest == 'true' }}
+            type=sha,prefix=sha-
+          labels: |
+            org.opencontainers.image.title=GirtelLeaf Git Bridge
+            org.opencontainers.image.description=Git bridge image for GirtelLeaf
+
+      - name: Build and push Git Bridge image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./services/git-bridge
+          file: ./services/git-bridge/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha,scope=girtelleaf-git-bridge
+          cache-to: type=gha,mode=max,scope=girtelleaf-git-bridge
+          push: true
+          provenance: false
+          sbom: false
+
+      - name: Inspect Git Bridge image
+        run: |
+          docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}/git-bridge:${{ needs.prepare.outputs.image_version }}

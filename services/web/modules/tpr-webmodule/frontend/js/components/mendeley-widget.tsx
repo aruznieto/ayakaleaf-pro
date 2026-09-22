@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { postJSON } from '@/infrastructure/fetch-json'
 import getMeta from '@/utils/meta'
 import OLButton from '@/shared/components/ol/ol-button'
-import OLNotification from '@/shared/components/ol/ol-notification'
+import Notification from '@/shared/components/notification'
 import {
   OLModal,
   OLModalBody,
@@ -83,18 +83,26 @@ function MendeleyWidgetInner() {
           })}
         </p>
         {oauthResult === 'success' && (
-          <OLNotification
-            type="success"
-            content={t('reference_manager_linked')}
-          />
+          <div className="notification-list">
+            <Notification
+              type="success"
+              content={t('reference_manager_linked')}
+            />
+          </div>
         )}
         {oauthResult === 'error' && (
-          <OLNotification
-            type="error"
-            content={t('generic_something_went_wrong')}
-          />
+          <div className="notification-list">
+            <Notification
+              type="error"
+              content={t('generic_something_went_wrong')}
+            />
+          </div>
         )}
-        {error && <OLNotification type="error" content={error} />}
+        {error && (
+          <div className="notification-list">
+            <Notification type="error" content={error} />
+          </div>
+        )}
       </div>
       <div>
         {isLinked ? (

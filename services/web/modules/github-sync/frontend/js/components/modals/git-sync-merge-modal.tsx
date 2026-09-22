@@ -9,7 +9,7 @@ import {
   OLModalFooter,
 } from '@/shared/components/ol/ol-modal'
 import OLButton from '@/shared/components/ol/ol-button'
-import OLNotification from '@/shared/components/ol/ol-notification'
+import Notification from '@/shared/components/notification'
 import { GitSyncModalStatus, ProjectSyncState } from '../../types/git-sync-types'
 
 type GitSyncMergeModalProps = {
@@ -104,10 +104,12 @@ const GitSyncMergeModal = ({
       </OLModalBody>
 
       {error && (
-        <OLNotification
-          type="error"
-          content={t('generic_something_went_wrong')}
-        />
+        <div className="notification-list">
+          <Notification
+            type="error"
+            content={t('generic_something_went_wrong')}
+          />
+        </div>
       )}
 
       <OLModalFooter>

@@ -1,6 +1,6 @@
 import { Sort } from '../types/api'
 import { Template } from '../../types/template'
-import { SortingOrder } from '@/types/sorting-order'
+import { SortingOrder } from '@ol-types/sorting-order'
 import { Compare } from '@ol-types/helpers/array/sort'
 
 const order = (order: SortingOrder, templates: Template[]) => {

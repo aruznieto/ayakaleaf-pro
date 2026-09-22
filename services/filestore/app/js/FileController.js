@@ -128,13 +128,9 @@ function deleteFile(req, res, next) {
   req.requestLogger.addFields({ key, bucket })
   req.requestLogger.setMessage('deleting file')
 
-  FileHandler.deleteFile(bucket, key, function (err) {
-    if (err) {
-      next(err)
-    } else {
-      res.sendStatus(204)
-    }
-  })
+  FileHandler.promises.deleteFile(bucket, key).then(() => {
+    res.sendStatus(204)
+  }, next)
 }
 
 function insertFile(req, res, next) {

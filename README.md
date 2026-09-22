@@ -63,7 +63,7 @@ If you are upgrading from a previous version of Ayakaleaf Pro, please see the [R
 
 ## Translations
 
-We welcome contributions to translations of Ayakaleaf Pro. Generally, we use claude.ai to translate the English text into other languages. If you find any errors in the translations, please submit a pull request to fix them. Please only modify relevant files in the `services/web/locales/locales_patches` folder.
+We welcome contributions to translations of Ayakaleaf Pro. Generally, we use claude/codex to translate the English text into other languages. If you find any errors in the translations, please submit a pull request to fix them. Please only modify relevant files in the `services/web/locales/locales_patches` folder.
 
 Files under `services/web/locales/` are overleaf official translation files. Please do not modify them directly.
 

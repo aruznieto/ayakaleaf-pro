@@ -1229,7 +1229,8 @@ module.exports = {
     'git-bridge',
     'github-sync',
     'tpr-webmodule',
-    'instance-features'
+    'instance-features',
+    'open-in-overleaf'
   ],
   viewIncludes: {},
 

@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react'
 import { getJSON } from '@/infrastructure/fetch-json'
 
 export type InstanceFeatures = {
+  ai: boolean
   githubSync: boolean
   zotero: boolean
   mendeley: boolean
 }
 
 const DISABLED: InstanceFeatures = {
+  ai: false,
   githubSync: false,
   zotero: false,
   mendeley: false,
@@ -29,6 +31,7 @@ function loadInstanceFeatures(): Promise<InstanceFeatures> {
     inflight = getJSON('/system/features')
       .then((data: Partial<InstanceFeatures>) => {
         cache = {
+          ai: Boolean(data?.ai),
           githubSync: Boolean(data?.githubSync),
           zotero: Boolean(data?.zotero),
           mendeley: Boolean(data?.mendeley),

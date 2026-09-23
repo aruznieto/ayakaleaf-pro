@@ -45,10 +45,11 @@ function parseParams(req) {
 
   let snippet = null
   if (src.encoded_snip != null) {
+    const encodedSnippet = String(src.encoded_snip).replace(/\+/g, ' ')
     try {
-      snippet = decodeURIComponent(src.encoded_snip)
+      snippet = decodeURIComponent(encodedSnippet)
     } catch (e) {
-      snippet = String(src.encoded_snip)
+      snippet = encodedSnippet
     }
   } else if (src.snip != null) {
     snippet = String(src.snip)

@@ -98,7 +98,7 @@ function safeFileName(name, url, index) {
 
 // Decode a `data:[<mime>][;base64],<payload>` URL into a Buffer.
 function decodeDataUrl(url, maxBytes) {
-  const match = /^data:([^,]*?),(.*)$/s.exec(url)
+  const match = /^data:([^,]*?),(.*)$/is.exec(url)
   if (!match) {
     throw new OpenInOverleafError('invalid data url')
   }
@@ -330,6 +330,9 @@ const OpenInOverleafManager = {
         )
       }
       // snip_name given: import under that name so main_document can select it.
+      if (Path.extname(file.name).toLowerCase() === '.tex') {
+        file.buffer = Buffer.from(prepareSnippet(file.buffer.toString('utf8')))
+      }
       return await importFilesAsZip(files, ownerId, projectName, preserveName)
     }
 

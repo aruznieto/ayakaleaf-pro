@@ -6,6 +6,7 @@
 // across browsers), URL-encodes the source into #ol_encoded_snip and submits
 // the single shared #ol_form to POST /docs.
 import '../../../../../../frontend/js/marketing'
+import '../../../stylesheets/devs.scss'
 
 function openInOverleaf(a) {
   function unformat(e) {

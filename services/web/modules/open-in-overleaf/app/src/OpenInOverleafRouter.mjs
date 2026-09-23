@@ -33,6 +33,12 @@ export default {
     if (webRouter.csrf) {
       webRouter.csrf.disableDefaultCsrfProtection('/docs', 'POST')
     }
+    // A cross-site POST must not replace the login cookie hidden by SameSite.
+    webRouter.sessionAutostartMiddleware.disableSessionAutostartForRoute(
+      '/docs',
+      'POST',
+      (_req, _res, next) => next()
+    )
 
     webRouter.get(
       '/docs',

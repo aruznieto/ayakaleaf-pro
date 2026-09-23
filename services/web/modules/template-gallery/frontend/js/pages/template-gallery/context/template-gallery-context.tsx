@@ -64,6 +64,7 @@ export function TemplateGalleryProvider({ children }: TemplateGalleryProviderPro
   }, [searchText])
 
   useEffect(() => {
+    let active = true
     runAsync(
       getTemplates({
         sort,
@@ -74,10 +75,15 @@ export function TemplateGalleryProvider({ children }: TemplateGalleryProviderPro
       })
     )
       .then(data => {
+        // Ignore responses for a page, sort, or search that is no longer active.
+        if (!active) return
         setVisibleTemplates(data.templates)
         setTotalTemplatesCount(data.totalSize)
       })
       .catch(debugConsole.error)
+    return () => {
+      active = false
+    }
   }, [runAsync, sort, category, currentPage, debouncedSearchText])
 
   const value = useMemo<TemplateGalleryContextValue>(

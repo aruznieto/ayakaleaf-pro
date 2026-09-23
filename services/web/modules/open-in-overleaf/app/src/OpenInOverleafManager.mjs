@@ -8,6 +8,7 @@ import logger from '@overleaf/logger'
 import urlValidator from 'valid-url'
 import { fetchStream, RequestFailedError } from '@overleaf/fetch-utils'
 import UrlHelper from '../../../../app/src/Features/Helpers/UrlHelper.mjs'
+import DocumentHelper from '../../../../app/src/Features/Documents/DocumentHelper.mjs'
 import ProjectCreationHandler from '../../../../app/src/Features/Project/ProjectCreationHandler.mjs'
 import ProjectUploadManager from '../../../../app/src/Features/Uploads/ProjectUploadManager.mjs'
 import ProjectOptionsHandler from '../../../../app/src/Features/Project/ProjectOptionsHandler.mjs'
@@ -50,7 +51,7 @@ const DOCUMENT_WRAPPER_TAIL = ['\\end{document}']
 
 function prepareSnippet(content) {
   const normalised = content.replace(/\r\n/g, '\n')
-  if (/\\documentclass/.test(normalised)) {
+  if (DocumentHelper.contentHasDocumentclass(normalised, normalised.length)) {
     return normalised
   }
   return [...DOCUMENT_WRAPPER_HEAD, normalised, ...DOCUMENT_WRAPPER_TAIL].join(
@@ -232,17 +233,20 @@ async function buildZipFromFiles(files) {
   const path = dumpPath('.zip')
   const output = fs.createWriteStream(path)
   const archive = archiver('zip')
-  const done = new Promise((resolve, reject) => {
-    output.on('close', resolve)
-    archive.on('error', reject)
-  })
-  archive.pipe(output)
-  for (const file of files) {
-    archive.append(file.buffer, { name: file.name })
+  const done = pipeline(archive, output)
+  try {
+    for (const file of files) {
+      archive.append(file.buffer, { name: file.name })
+    }
+    await Promise.all([archive.finalize(), done])
+    return path
+  } catch (err) {
+    archive.abort()
+    output.destroy()
+    await done.catch(() => {})
+    await fs.promises.unlink(path).catch(() => {})
+    throw err
   }
-  await archive.finalize()
-  await done
-  return path
 }
 
 const OpenInOverleafManager = {

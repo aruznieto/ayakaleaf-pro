@@ -108,11 +108,8 @@ async function suggestFix(req, res) {
     }),
   })
   const send = evt => {
-    res.write(`data: ${JSON.stringify(evt)}\n\n`)
+    if (!res.destroyed) res.write(`data: ${JSON.stringify(evt)}\n\n`)
   }
-
-  const abortController = new AbortController()
-  res.on('close', () => abortController.abort())
 
   try {
     // The prompt already contains the source, so only the edit-suggestion tool is needed.
@@ -124,10 +121,9 @@ async function suggestFix(req, res) {
       prompt: _buildUserPrompt(logEntry, docs),
       tools: { suggestLineChange },
       stopWhen: stepCountIs(1),
-      abortSignal: abortController.signal,
-      onFinish: async event => {
+      // Keep reading after a disconnect so this step's usage is still recorded.
+      onStepFinish: async ({ usage }) => {
         if (userId) {
-          const usage = event.totalUsage || event.usage
           await recordTokenUsage(userId, usage?.totalTokens)
         }
       },

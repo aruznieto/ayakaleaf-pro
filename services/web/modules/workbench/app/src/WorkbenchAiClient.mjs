@@ -58,6 +58,7 @@ export function getProvider() {
       name: 'overleaf-workbench',
       baseURL: Settings.workbenchAi.baseURL,
       apiKey: Settings.workbenchAi.apiKey,
+      includeUsage: true,
     }
     const proxyFetch = _getProxyFetch()
     if (proxyFetch) {
@@ -69,10 +70,9 @@ export function getProvider() {
 }
 
 /**
- * Resolves the model for a request. An omitted model or the 'default' value
- * uses the instance's configured AI_MODEL.
+ * Selects the instance's configured text or image model for a request.
  */
-export function resolveModel(bodyModel, messages = []) {
+export function resolveModel(messages = []) {
   // Follow-up requests retain earlier images, so route the entire conversation.
   if (
     Settings.workbenchAi?.imageModel &&
@@ -85,9 +85,6 @@ export function resolveModel(bodyModel, messages = []) {
     )
   ) {
     return Settings.workbenchAi.imageModel
-  }
-  if (bodyModel && bodyModel !== 'default') {
-    return bodyModel
   }
   return Settings.workbenchAi?.model
 }

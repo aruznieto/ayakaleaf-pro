@@ -1,7 +1,7 @@
 import logger from '@overleaf/logger'
 import { expressify } from '@overleaf/promise-utils'
 import { getAiAccess } from './PermissionsMiddleware.mjs'
-import { streamText, stepCountIs } from 'ai'
+import { consumeStream, streamText, stepCountIs } from 'ai'
 import SessionManager from '../../../../app/src/Features/Authentication/SessionManager.mjs'
 import {
   isConfigured,
@@ -63,7 +63,7 @@ async function texGpt(req, res) {
     return res.status(403).json({ error: 'ai_not_configured' })
   }
 
-  const { messages, model } = req.body || {}
+  const { messages } = req.body || {}
   if (!Array.isArray(messages)) {
     return res.status(400).json({ error: 'invalid_request' })
   }
@@ -120,11 +120,7 @@ async function texGpt(req, res) {
     return res.status(400).json({ error: 'invalid_messages' })
   }
 
-  const resolvedModel = resolveModel(model, messages)
-
-  // Abort the gateway request if the client disconnects mid-stream.
-  const abortController = new AbortController()
-  res.on('close', () => abortController.abort())
+  const resolvedModel = resolveModel(messages)
 
   try {
     const result = streamText({
@@ -132,17 +128,17 @@ async function texGpt(req, res) {
       system,
       messages: modelMessages,
       tools,
-      stopWhen: stepCountIs(getMaxSteps()),
-      abortSignal: abortController.signal,
-      onFinish: async event => {
+      // Finish the current step for its usage report, but stop after a disconnect.
+      stopWhen: [stepCountIs(getMaxSteps()), () => res.destroyed],
+      onStepFinish: async ({ usage }) => {
         if (userId) {
-          const usage = event.totalUsage || event.usage
           await recordTokenUsage(userId, usage?.totalTokens)
         }
       },
     })
 
     result.pipeUIMessageStreamToResponse(res, {
+      consumeSseStream: consumeStream,
       // Suggestion counts are unmetered. Token headers report the balance
       // before this request because headers are sent before streaming completes.
       headers: {

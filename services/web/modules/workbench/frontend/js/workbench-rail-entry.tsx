@@ -4,6 +4,7 @@
 import './workbench.css'
 import { createPortal } from 'react-dom'
 import MaterialIcon from '@/shared/components/material-icon'
+import getMeta from '@/utils/meta'
 import { useWorkbenchSettings } from './context/workbench-settings-context'
 import WorkbenchPanel from './components/workbench-panel'
 import { WorkbenchDock } from './components/workbench-dock'
@@ -37,6 +38,8 @@ const workbenchRailEntry = {
   title: 'AI assistant',
   component: <WorkbenchRailPanel />,
   mountOnFirstLoad: true,
+  hide: () =>
+    !(getMeta('ol-ExposedSettings') as { aiAvailable?: boolean }).aiAvailable,
 }
 
 export default workbenchRailEntry

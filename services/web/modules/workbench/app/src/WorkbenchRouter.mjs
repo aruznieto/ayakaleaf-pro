@@ -1,9 +1,14 @@
 import AuthenticationController from '../../../../app/src/Features/Authentication/AuthenticationController.mjs'
 import WorkbenchController from './WorkbenchController.mjs'
 import PermissionsMiddleware from './PermissionsMiddleware.mjs'
+import { isConfigured } from './WorkbenchAiClient.mjs'
 
 export default {
   apply(webRouter) {
+    webRouter.use('/project', (req, res, next) => {
+      res.locals.ExposedSettings.aiAvailable = isConfigured()
+      next()
+    })
     webRouter.get(
       '/workbench/access',
       AuthenticationController.requireLogin(),

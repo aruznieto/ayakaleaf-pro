@@ -3,6 +3,7 @@ import { Panel } from 'react-resizable-panels'
 import { HorizontalResizeHandle } from '@/features/ide-react/components/resize/horizontal-resize-handle'
 import { useRailContext } from '@/features/ide-react/context/rail-context'
 import { useLayoutContext } from '@/shared/context/layout-context'
+import getMeta from '@/utils/meta'
 import {
   useWorkbenchSettings,
   type WorkbenchPosition,
@@ -30,8 +31,9 @@ export default function WorkbenchRightPanel({ order }: { order: number }) {
   const { position, open } = useWorkbenchSettings()
   const { view, focusMode } = useLayoutContext()
   const { setResizing } = useRailContext()
+  const { aiAvailable } = getMeta('ol-ExposedSettings') as { aiAvailable?: boolean }
 
-  if (position !== 'right' || !open || focusMode || view === 'history') {
+  if (!aiAvailable || position !== 'right' || !open || focusMode || view === 'history') {
     return null
   }
 

@@ -30,7 +30,7 @@ import type { EditorView } from '@codemirror/view'
 import { useWorkbenchSettings, type WorkbenchTab } from '../context/workbench-settings-context'
 import { useWorkbenchFileActions } from '../hooks/use-file-actions'
 import { clientTools, serverTools } from '../tools/client-tools'
-import { RateLimitError, ForbiddenError, ToolRejectionError } from '../errors'
+import { RateLimitError, ForbiddenError, ToolRejectionError, ToolCallLimitError } from '../errors'
 import {
   Conversation,
   ConversationContent,
@@ -160,6 +160,9 @@ export default function WorkbenchChat({
           if (response.status === 403) {
             throw new ForbiddenError()
           }
+          if (response.status === 409) {
+            throw new ToolCallLimitError()
+          }
           if (response.status === 429) {
             throw new RateLimitError(response.headers.get('RateLimit-Reset'))
           }
@@ -183,6 +186,8 @@ export default function WorkbenchChat({
     onError(err: unknown) {
       if (err instanceof RateLimitError) {
         setError('paywalled')
+      } else if (err instanceof ToolCallLimitError) {
+        setError(err.message)
       } else {
         debugConsole.error(err)
         setError(true)

@@ -60,15 +60,17 @@ export const CLIENT_TOOLS = {
   }),
 
   open_file: tool({
-    description: 'Open an existing project file in the editor.',
+    description:
+      'Read the entire contents of a project file without switching the editor. ' +
+      'Returns an array of { line, content } with 1-indexed lines.',
     inputSchema: z.object({
-      path: z.string().describe('Project-relative path of the file to open.'),
+      path: z.string().describe('Project-relative path of the file to read.'),
     }),
   }),
 
   replace_lines: tool({
     description:
-      'Propose replacing a range of lines in the file open in the editor. The ' +
+      'Propose replacing a range of lines in a project file. The ' +
       'user is shown a diff and must approve it before the change is applied, ' +
       'so provide its project-relative path and the exact current content of ' +
       'the lines being replaced ' +

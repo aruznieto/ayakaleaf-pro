@@ -89,9 +89,10 @@ export function resolveModel(messages = []) {
   return Settings.workbenchAi?.model
 }
 
-/** Max server-side agent steps per request (tool loops). */
+/** Maximum tool calls per user message, including automatic continuations. */
 export function getMaxSteps() {
-  return Settings.workbenchAi?.maxSteps || 20
+  const limit = Settings.workbenchAi?.maxSteps
+  return Number.isSafeInteger(limit) && limit > 0 ? limit : 20
 }
 
 /**

@@ -10,6 +10,8 @@ import { useEditorManagerContext } from '@/features/ide-react/context/editor-man
 import { useDetachCompileContext } from '@/shared/context/detach-compile-context'
 import { useProjectSettingsContext } from '@/features/ide-settings/context/project-settings-context'
 import { syncCreateEntity } from '@/features/file-tree/util/sync-mutation'
+import { getJSON } from '@/infrastructure/fetch-json'
+import { signalWithTimeout } from '@/utils/abort-signal'
 import { ToolRejectionError } from '../errors'
 
 const MAX_PDF_PAGE_PIXELS = 1048576 // downscale rendered pages to ~1MP
@@ -17,7 +19,7 @@ const MAX_PDF_PAGE_PIXELS = 1048576 // downscale rendered pages to ~1MP
 export type WorkbenchFileActions = {
   createFile: (path: string) => Promise<void>
   listFiles: () => Promise<string[]>
-  openFile: (path: string) => Promise<void>
+  openFile: (path: string, signal: AbortSignal) => Promise<string>
   startCompile: (options?: any) => Promise<void>
   setCompiler: ReturnType<typeof useProjectSettingsContext>['setCompiler']
   viewPdfPage: (page: number, signal: AbortSignal) => Promise<string | undefined>
@@ -28,7 +30,7 @@ export function useWorkbenchFileActions(): WorkbenchFileActions {
   const { projectId } = useProjectContext()
   const { findEntityByPath } = useFileTreePathContext()
   const { fileTreeData } = useFileTreeData()
-  const { openDoc } = useEditorManagerContext()
+  const { openDoc, openDocs } = useEditorManagerContext()
   const { startCompile, pdfUrl } = useDetachCompileContext()
   const { setCompiler } = useProjectSettingsContext()
 
@@ -67,7 +69,7 @@ export function useWorkbenchFileActions(): WorkbenchFileActions {
   )
 
   const openFile = useCallback(
-    async (path: string) => {
+    async (path: string, signal: AbortSignal) => {
       const cleanPath = path.replace(/\/$/, '')
       const found = findEntityByPath(cleanPath)
       if (!found) {
@@ -76,9 +78,19 @@ export function useWorkbenchFileActions(): WorkbenchFileActions {
       if (found.type !== 'doc') {
         throw new Error('Invalid entity type')
       }
-      await openDoc(found.entity as any)
+      const readSignal = signalWithTimeout(signal, 5000)
+      if (readSignal.aborted) {
+        throw new Error('File read cancelled')
+      }
+      // Include pending edits before reading the live document without switching the editor.
+      await openDocs.awaitBufferedOps(readSignal)
+      const { message } = await getJSON<{ message: string }>(
+        `/project/${projectId}/doc/${found.entity._id}/download`,
+        { signal: readSignal, cache: 'no-store', swallowAbortError: false }
+      )
+      return message
     },
-    [findEntityByPath, openDoc]
+    [findEntityByPath, openDocs, projectId]
   )
 
   const listFiles = useCallback(

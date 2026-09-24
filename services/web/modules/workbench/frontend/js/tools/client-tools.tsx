@@ -203,9 +203,13 @@ export const clientTools: Record<string, ClientTool> = {
     },
   },
   open_file: {
-    title: part => `Open file ${part.input.path}`,
-    async execute(input, view, { openFile }) {
-      await openFile(input.path)
+    title: part => `Read file ${part.input.path}`,
+    async execute(input, view, { openFile }, signal) {
+      const content = await openFile(input.path, signal)
+      return content.split('\n').map((content, index) => ({
+        line: index + 1,
+        content,
+      }))
     },
   },
   replace_lines: {

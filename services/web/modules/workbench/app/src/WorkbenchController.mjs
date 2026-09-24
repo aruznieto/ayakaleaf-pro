@@ -1,7 +1,7 @@
 import logger from '@overleaf/logger'
 import { expressify } from '@overleaf/promise-utils'
 import { getAiAccess } from './PermissionsMiddleware.mjs'
-import { consumeStream, streamText, stepCountIs } from 'ai'
+import { consumeStream, streamText, wrapLanguageModel } from 'ai'
 import SessionManager from '../../../../app/src/Features/Authentication/SessionManager.mjs'
 import {
   isConfigured,
@@ -13,6 +13,7 @@ import {
 import { CLIENT_TOOLS, convertWorkbenchMessages } from './WorkbenchTools.mjs'
 import { WEB_SEARCH_TOOL, isWebSearchConfigured } from './WebSearchTool.mjs'
 import { DOCS_SEARCH_TOOL, isDocsSearchConfigured } from './DocsSearchTool.mjs'
+import { createToolCallLimit } from './ToolCallLimit.mjs'
 import {
   isQuotaEnabled,
   getRemainingTokens,
@@ -69,6 +70,10 @@ async function texGpt(req, res) {
   if (!hasValidAttachments(messages)) {
     return res.status(400).json({ error: 'invalid_attachments' })
   }
+  const toolCallLimit = createToolCallLimit(messages, getMaxSteps())
+  if (toolCallLimit.exhausted()) {
+    return res.status(409).json({ error: 'ai_tool_call_limit_exceeded' })
+  }
 
   // Check the current period's quota before streaming. Usage is recorded on
   // completion, so a request may exceed the remaining balance.
@@ -123,12 +128,15 @@ async function texGpt(req, res) {
 
   try {
     const result = streamText({
-      model: getProvider()(resolvedModel),
+      model: wrapLanguageModel({
+        model: getProvider()(resolvedModel),
+        middleware: toolCallLimit.middleware,
+      }),
       system,
       messages: modelMessages,
       tools,
       // Finish the current step for its usage report, but stop after a disconnect.
-      stopWhen: [stepCountIs(getMaxSteps()), () => res.destroyed],
+      stopWhen: [toolCallLimit.exhausted, () => res.destroyed],
       onStepFinish: async ({ usage }) => {
         if (userId) {
           await recordTokenUsage(userId, usage?.totalTokens)

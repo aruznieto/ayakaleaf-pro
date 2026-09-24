@@ -26,6 +26,13 @@ export class ForbiddenError extends Error {
   }
 }
 
+export class ToolCallLimitError extends Error {
+  constructor() {
+    super('Tool call limit reached for this message. Send another message to continue.')
+    this.name = 'ToolCallLimitError'
+  }
+}
+
 /** A client-side tool declined to run (e.g. the user rejected an edit). */
 export class ToolRejectionError extends Error {
   constructor(message?: string) {

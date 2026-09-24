@@ -31,7 +31,7 @@ export default function SuggestFixButton({
 }) {
   const { t } = useTranslation()
   const { view } = useEditorViewContext()
-  const hasAiFeatures = useAiAccess()
+  const hasAiFeatures = useAiAccess('errorAssistant')
   const disabled = Boolean(getMeta('ol-showAiFeaturesDisabled'))
 
   const onClick = useCallback((event: MouseEvent<HTMLButtonElement>) => {

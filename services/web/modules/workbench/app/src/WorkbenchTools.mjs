@@ -1,4 +1,4 @@
-import { tool } from 'ai'
+import { convertToModelMessages, tool } from 'ai'
 import { z } from 'zod'
 
 /**
@@ -134,3 +134,39 @@ export const CLIENT_TOOLS = {
 }
 
 export default CLIENT_TOOLS
+
+export async function convertWorkbenchMessages(messages) {
+  const converted = await convertToModelMessages(messages)
+  return converted.flatMap(message => {
+    if (message.role !== 'tool') return [message]
+
+    const images = []
+    const content = message.content.map(part => {
+      if (
+        part.type !== 'tool-result' ||
+        part.toolName !== 'view_page' ||
+        part.output.type !== 'text'
+      ) {
+        return part
+      }
+      const image = part.output.value
+      const data = Buffer.from(image, 'base64')
+      if (
+        data.toString('base64') !== image ||
+        !data.subarray(0, 8).equals(Buffer.from('89504e470d0a1a0a', 'hex'))
+      ) {
+        throw new Error('Invalid PDF page image')
+      }
+      images.push(
+        { type: 'text', text: `PDF page from tool call ${part.toolCallId}:` },
+        { type: 'image', image, mediaType: 'image/png' }
+      )
+      return { ...part, output: { type: 'text', value: 'PDF page image attached.' } }
+    })
+
+    // Chat Completions tool messages accept text; images need a user message.
+    return images.length
+      ? [{ ...message, content }, { role: 'user', content: images }]
+      : [message]
+  })
+}

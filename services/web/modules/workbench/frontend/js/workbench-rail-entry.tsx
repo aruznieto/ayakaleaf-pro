@@ -1,17 +1,20 @@
 /**
- * Registers the AI assistant rail tab and its settings provider through
- * overleafModuleImports.railEntries.
+ * Registers the AI assistant rail tab through overleafModuleImports.railEntries.
  */
 import './workbench.css'
+import { createPortal } from 'react-dom'
 import MaterialIcon from '@/shared/components/material-icon'
-import { WorkbenchSettingsProvider } from './context/workbench-settings-context'
+import { useWorkbenchSettings } from './context/workbench-settings-context'
 import WorkbenchPanel from './components/workbench-panel'
+import { WorkbenchDock } from './components/workbench-dock'
 
 function WorkbenchRailPanel() {
+  const { panelContainer } = useWorkbenchSettings()
   return (
-    <WorkbenchSettingsProvider>
-      <WorkbenchPanel />
-    </WorkbenchSettingsProvider>
+    <>
+      <WorkbenchDock side="left" />
+      {createPortal(<WorkbenchPanel />, panelContainer)}
+    </>
   )
 }
 
@@ -33,6 +36,7 @@ const workbenchRailEntry = {
   icon: WorkbenchRailIcon,
   title: 'AI assistant',
   component: <WorkbenchRailPanel />,
+  mountOnFirstLoad: true,
 }
 
 export default workbenchRailEntry

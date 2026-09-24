@@ -10,7 +10,7 @@ export default {
       '/project/:Project_id/suggest-fix',
       AuthenticationController.requireLogin(),
       AuthorizationMiddleware.ensureUserCanReadProject,
-      PermissionsMiddleware.requireAiAccess,
+      PermissionsMiddleware.requireErrorAssistantAccess,
       ErrorAssistantController.suggestFix
     )
   },

@@ -1075,14 +1075,24 @@ module.exports = {
     sourceEditorToolbarButtonGroups: [],
     sourceEditorToolbarComponents: [],
     sourceEditorToolbarEndButtons: [],
-    rootContextProviders: [],
+    rootContextProviders: [
+      Path.resolve(
+        __dirname,
+        '../modules/workbench/frontend/js/context/workbench-settings-context'
+      ),
+    ],
     mainEditorLayoutModals: [
       Path.resolve(
         __dirname,
         '../modules/reference-picker/frontend/js/components/reference-picker-controller.tsx'
       ),
     ],
-    mainEditorLayoutPanels: [],
+    mainEditorLayoutPanels: [
+      Path.resolve(
+        __dirname,
+        '../modules/workbench/frontend/js/components/workbench-dock'
+      ),
+    ],
     pythonRunner: [
       Path.resolve(
         __dirname,

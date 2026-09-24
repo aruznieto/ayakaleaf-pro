@@ -37,7 +37,7 @@ export default function ErrorAssistant({
   logEntry: SuggestFixLogEntry
 }) {
   const { t } = useTranslation()
-  const hasAiFeatures = useAiAccess()
+  const hasAiFeatures = useAiAccess('errorAssistant')
   const showAiFeaturesDisabled = getMeta('ol-showAiFeaturesDisabled')
   const { hasGivenAiConsent, giveAiConsent } = useAiConsent()
   const { view } = useEditorViewContext()

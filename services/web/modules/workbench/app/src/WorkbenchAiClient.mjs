@@ -78,7 +78,9 @@ export function resolveModel(bodyModel, messages = []) {
     Settings.workbenchAi?.imageModel &&
     messages.some(message =>
       message.parts?.some(
-        part => part.type === 'file' && part.mediaType?.startsWith('image/')
+        part =>
+          (part.type === 'file' && part.mediaType?.startsWith('image/')) ||
+          (part.type === 'tool-view_page' && part.state === 'output-available')
       )
     )
   ) {

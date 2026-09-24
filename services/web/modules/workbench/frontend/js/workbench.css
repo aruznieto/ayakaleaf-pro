@@ -154,6 +154,10 @@
   overflow-y: hidden;
   position: relative;
 }
+/* The chat can mount before its dock is attached, when overflow cannot be measured. */
+.conversation > div {
+  overflow-y: auto;
+}
 .conversation-scroll-to-bottom {
   border-color: var(--neutral-30);
   bottom: 1rem;

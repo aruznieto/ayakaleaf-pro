@@ -1,7 +1,7 @@
 import logger from '@overleaf/logger'
 import { expressify } from '@overleaf/promise-utils'
-import { canUseAi } from './PermissionsMiddleware.mjs'
-import { streamText, convertToModelMessages, stepCountIs } from 'ai'
+import { getAiAccess } from './PermissionsMiddleware.mjs'
+import { streamText, stepCountIs } from 'ai'
 import SessionManager from '../../../../app/src/Features/Authentication/SessionManager.mjs'
 import {
   isConfigured,
@@ -10,7 +10,7 @@ import {
   getMaxSteps,
   SYSTEM_PROMPT,
 } from './WorkbenchAiClient.mjs'
-import { CLIENT_TOOLS } from './WorkbenchTools.mjs'
+import { CLIENT_TOOLS, convertWorkbenchMessages } from './WorkbenchTools.mjs'
 import { WEB_SEARCH_TOOL, isWebSearchConfigured } from './WebSearchTool.mjs'
 import { DOCS_SEARCH_TOOL, isDocsSearchConfigured } from './DocsSearchTool.mjs'
 import {
@@ -114,7 +114,7 @@ async function texGpt(req, res) {
 
   let modelMessages
   try {
-    modelMessages = await convertToModelMessages(messages)
+    modelMessages = await convertWorkbenchMessages(messages)
   } catch (err) {
     logger.warn({ err, userId }, 'workbench tex-gpt: could not parse messages')
     return res.status(400).json({ error: 'invalid_messages' })
@@ -174,7 +174,8 @@ async function texGpt(req, res) {
 export default {
   getAccess: expressify(async (req, res) => {
     res.set('Cache-Control', 'no-store')
-    res.json({ allowed: await canUseAi(SessionManager.getLoggedInUserId(req.session)) })
+    const access = await getAiAccess(SessionManager.getLoggedInUserId(req.session))
+    res.json({ allowed: access.chat, errorAssistant: access.errorAssistant })
   }),
   texGpt,
 }

@@ -21,6 +21,7 @@ import latex from 'react-syntax-highlighter/dist/esm/languages/prism/latex'
 // eslint-disable-next-line import/no-unresolved
 import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { CopyToClipboard } from '@/shared/components/copy-to-clipboard'
+import OLTable from '@/shared/components/ol/ol-table'
 import { useActiveOverallTheme } from '@/shared/hooks/use-active-overall-theme'
 import { sendMB } from '@/infrastructure/event-tracking'
 
@@ -135,10 +136,10 @@ const markdownComponents = {
       {children}
     </a>
   ),
-  table: ({ children, ...props }: any) => (
-    <div {...props} className="overflow-x-auto">
+  table: ({ children }: any) => (
+    <OLTable responsive bordered className="table-bordered">
       {children}
-    </div>
+    </OLTable>
   ),
   code({ className, children, ...props }: any) {
     if (!children) {

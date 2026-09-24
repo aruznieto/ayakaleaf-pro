@@ -7,6 +7,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useLayoutEffect,
   useMemo,
   useState,
   type FC,
@@ -14,6 +15,7 @@ import {
 } from 'react'
 import customLocalStorage from '@/infrastructure/local-storage'
 import getMeta from '@/utils/meta'
+import { useRailContext } from '@/features/ide-react/context/rail-context'
 
 declare module '@/utils/meta' {
   interface Meta {
@@ -58,6 +60,7 @@ type WorkbenchSettings = {
   /** Whether the workbench pane is open. */
   open: boolean
   setOpen: (open: boolean) => void
+  panelContainer: HTMLDivElement
   model: string
   setModel: (model: string) => void
   enabledTools: Set<string>
@@ -74,12 +77,27 @@ export const WorkbenchSettingsProvider: FC<PropsWithChildren> = ({
 }) => {
   const [tab, setTab] = useState<WorkbenchTab>('chat')
   const [open, setOpen] = useState(false)
+  // Keep one portal target so docking preserves the chat and its active stream.
+  const [panelContainer] = useState(() => {
+    const element = document.createElement('div')
+    element.className = 'h-100'
+    return element
+  })
   const [position, setPositionState] = useState<WorkbenchPosition>(
     () => (customLocalStorage.getItem(STORAGE.position) as WorkbenchPosition) ?? 'left'
   )
   const [model, setModelState] = useState<string>(defaultModel)
   const [enabledTools, setEnabledToolsState] =
     useState<Set<string>>(defaultEnabledTools)
+  const { selectedTab, isOpen, selectTab, setIsOpen } = useRailContext()
+
+  useLayoutEffect(() => {
+    if (position === 'right' && selectedTab === 'workbench' && isOpen) {
+      setOpen(value => !value)
+      selectTab('file-tree')
+      setIsOpen(false)
+    }
+  }, [position, selectedTab, isOpen, selectTab, setIsOpen])
 
   const setPosition = useCallback((next: WorkbenchPosition) => {
     setPositionState(next)
@@ -114,13 +132,14 @@ export const WorkbenchSettingsProvider: FC<PropsWithChildren> = ({
       setPosition,
       open,
       setOpen,
+      panelContainer,
       model,
       setModel,
       enabledTools,
       toggleTool,
       setEnabledTools,
     }),
-    [tab, position, setPosition, open, model, setModel, enabledTools, toggleTool, setEnabledTools]
+    [tab, position, setPosition, open, panelContainer, model, setModel, enabledTools, toggleTool, setEnabledTools]
   )
 
   return (
@@ -139,3 +158,5 @@ export function useWorkbenchSettings(): WorkbenchSettings {
   }
   return context
 }
+
+export default WorkbenchSettingsProvider

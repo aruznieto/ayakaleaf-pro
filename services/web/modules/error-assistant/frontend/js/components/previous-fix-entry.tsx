@@ -16,7 +16,7 @@ export default function PreviousFixEntry() {
   const { t } = useTranslation()
   const { view } = useEditorViewContext()
   const { compiling, syncToEntry } = useDetachCompileContext()
-  const hasAiFeatures = useAiAccess()
+  const hasAiFeatures = useAiAccess('errorAssistant')
 
   const [previousFix, setPreviousFix] = useState(
     () => view?.state.field(previousFixState, false) ?? null

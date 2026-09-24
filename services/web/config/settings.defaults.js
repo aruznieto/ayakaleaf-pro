@@ -1036,12 +1036,32 @@ module.exports = {
       ),
     ],
     contactUsModal: [],
-    sourceEditorExtensions: [],
+    sourceEditorExtensions: [
+      Path.resolve(
+        __dirname,
+        '../modules/error-assistant/frontend/js/extensions/previous-fix'
+      ),
+    ],
     sourceEditorVisualExtensions: [],
     sourceEditorComponents: [],
-    pdfLogEntryHeaderActionComponents: [],
-    pdfLogEntryComponents: [],
-    pdfLogEntriesComponents: [],
+    pdfLogEntryHeaderActionComponents: [
+      Path.resolve(
+        __dirname,
+        '../modules/error-assistant/frontend/js/components/suggest-fix-button'
+      ),
+    ],
+    pdfLogEntryComponents: [
+      Path.resolve(
+        __dirname,
+        '../modules/error-assistant/frontend/js/components/error-assistant'
+      ),
+    ],
+    pdfLogEntriesComponents: [
+      Path.resolve(
+        __dirname,
+        '../modules/error-assistant/frontend/js/components/previous-fix-entry'
+      ),
+    ],
     pdfPreviewPromotions: [],
     diagnosticActions: [],
     sourceEditorCompletionSources: [],
@@ -1055,14 +1075,24 @@ module.exports = {
     sourceEditorToolbarButtonGroups: [],
     sourceEditorToolbarComponents: [],
     sourceEditorToolbarEndButtons: [],
-    rootContextProviders: [],
+    rootContextProviders: [
+      Path.resolve(
+        __dirname,
+        '../modules/workbench/frontend/js/context/workbench-settings-context'
+      ),
+    ],
     mainEditorLayoutModals: [
       Path.resolve(
         __dirname,
         '../modules/reference-picker/frontend/js/components/reference-picker-controller.tsx'
       ),
     ],
-    mainEditorLayoutPanels: [],
+    mainEditorLayoutPanels: [
+      Path.resolve(
+        __dirname,
+        '../modules/workbench/frontend/js/components/workbench-dock'
+      ),
+    ],
     pythonRunner: [
       Path.resolve(
         __dirname,
@@ -1203,7 +1233,12 @@ module.exports = {
         '../modules/reference-picker/frontend/js/reference-index/advanced-reference-index.ts'
       ),
     ],
-    railEntries: [],
+    railEntries: [
+      Path.resolve(
+        __dirname,
+        '../modules/workbench/frontend/js/workbench-rail-entry'
+      ),
+    ],
     railPopovers: [],
     railActions: [],
     railModals: [],
@@ -1229,6 +1264,8 @@ module.exports = {
     'git-bridge',
     'github-sync',
     'tpr-webmodule',
+    'workbench',
+    'error-assistant',
     'instance-features',
     'open-in-overleaf'
   ],

@@ -40,7 +40,9 @@ const SideSelector = memo(function SideSelector() {
   return (
     <OLTooltip
       id="workbench-side-selector"
-      description={t(position === 'left' ? 'move_to_the_right' : 'move_to_the_left')}
+      description={
+        position === 'left' ? t('move_to_the_right') : t('move_to_the_left')
+      }
       overlayProps={{ placement: 'bottom' }}
     >
       <OLIconButton

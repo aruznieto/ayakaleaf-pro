@@ -952,7 +952,9 @@ export const PromptInput = forwardRef<
           {alphaProgram && (
             <OLTooltip
               id="chat-prompt-voice-input"
-              description={t(speechAvailable ? 'speak' : 'speech_input_not_available')}
+              description={
+                speechAvailable ? t('speak') : t('speech_input_not_available')
+              }
             >
               <span>
                 <SpeechButton
@@ -967,7 +969,13 @@ export const PromptInput = forwardRef<
           )}
           <OLTooltip
             id="chat-prompt-send-message"
-            description={t(status === 'error' ? 'error' : status === 'ready' ? 'send' : 'stop')}
+            description={
+              status === 'error'
+                ? t('error')
+                : status === 'ready'
+                  ? t('send')
+                  : t('stop')
+            }
           >
             <span>
               <SubmitButton

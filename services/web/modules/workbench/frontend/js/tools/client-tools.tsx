@@ -80,7 +80,9 @@ export function applyLineChange(
         }
       }
     }
-    throw new Error('Content mismatch')
+    throw new Error(
+      'The current text no longer matches this suggestion. Review the document and make the change manually.'
+    )
   })()
 
   const { from, documentSource } = locate

@@ -5,16 +5,13 @@ import UserGetter from '../../../../app/src/Features/User/UserGetter.mjs'
 
 export async function getAiAccess(userId) {
   const denied = { chat: false, errorAssistant: false }
-  if (!userId) return denied
+  if (!userId || !Settings.workbenchAi?.enabled) return denied
 
   // Read current permissions so an admin can revoke access to an open session.
   const user = await UserGetter.promises.getUser(userId, { aiFeatures: 1 })
   if (!user || user.aiFeatures?.enabled === false) return denied
 
-  const features = await UserGetter.promises.getUserFeatures(userId)
-  const chat =
-    features.aiUsageQuota === (Settings.aiFeatures?.unlimitedQuota ?? 'unlimited')
-  return { chat, errorAssistant: chat || Boolean(features.aiErrorAssistant) }
+  return { chat: true, errorAssistant: true }
 }
 
 function requireAccess(feature) {

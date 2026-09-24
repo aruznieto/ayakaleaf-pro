@@ -28,8 +28,7 @@ function hasValidAttachments(messages) {
       if (
         typeof part.url !== 'string' ||
         typeof part.mediaType !== 'string' ||
-        (!/^image\/[a-z0-9.+-]+$/.test(part.mediaType) &&
-          part.mediaType !== 'application/pdf')
+        !/^image\/[a-z0-9.+-]+$/.test(part.mediaType)
       ) {
         return false
       }

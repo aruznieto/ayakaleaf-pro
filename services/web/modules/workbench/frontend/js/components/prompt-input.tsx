@@ -307,12 +307,8 @@ const PromptInputForm: FC<
       setError(false)
       const items = Array.from(fileList)
       if (items.length) {
-        if (
-          items.some(
-            file => file.type !== 'application/pdf' && !file.type.startsWith('image/')
-          )
-        ) {
-          setError('Only image and PDF files are allowed')
+        if (items.some(file => !file.type.startsWith('image/'))) {
+          setError('Only image files are allowed')
         } else if (items.some(file => file.size > 2097152)) {
           setError('All files must be smaller than 2MB')
         } else {
@@ -446,7 +442,7 @@ const PromptTextarea = forwardRef<HTMLTextAreaElement, { placeholder?: string }>
           for (const item of items) {
             if (item.kind === 'file') {
               const file = item.getAsFile()
-              if (file) {
+              if (file?.type.startsWith('image/')) {
                 files.push(file)
               }
             }
@@ -927,7 +923,7 @@ export const PromptInput = forwardRef<
       }}
       setError={setError}
       multiple
-      accept="image/*, application/pdf"
+      accept="image/*"
       className={classNames('my-1 p-2 workbench-prompt-input', className)}
     >
       {(showSelection || attachments.files.length > 0) && (

@@ -185,6 +185,7 @@ export function useEnsureCurrentPath() {
   const [notification, setNotification] = useState<WorkbenchError | null>(null)
   return {
     notification,
+    setNotification,
     ensureCurrentPath: useCallback(
       async (path?: string) => {
         setNotification(null)
@@ -319,7 +320,21 @@ export const SuggestionUndo = ({
 }) => {
   const [undone, setUndone] = useState(false)
   const { t } = useTranslation()
-  const { ensureCurrentPath, notification } = useEnsureCurrentPath()
+  const { ensureCurrentPath, notification, setNotification } = useEnsureCurrentPath()
+  const toggleChange = async () => {
+    if (!(await ensureCurrentPath(part.input.path))) return
+    try {
+      if (undone) {
+        handleApply()
+      } else {
+        handleUndo()
+      }
+      setUndone(!undone)
+    } catch (error) {
+      debugConsole.error(error)
+      setNotification(error instanceof Error ? error.message : true)
+    }
+  }
   if (part.state !== 'output-available') {
     return null
   }
@@ -333,11 +348,7 @@ export const SuggestionUndo = ({
             <OLButton
               size="sm"
               variant="secondary"
-              onClick={async () => {
-                if (!(await ensureCurrentPath(part.input.path))) return
-                handleApply()
-                setUndone(false)
-              }}
+              onClick={toggleChange}
             >
               {t('apply')} <MaterialIcon type="arrow_right_alt" />
             </OLButton>
@@ -346,11 +357,7 @@ export const SuggestionUndo = ({
               size="sm"
               variant="ghost"
               style={{ border: '1px solid transparent' }}
-              onClick={async () => {
-                if (!(await ensureCurrentPath(part.input.path))) return
-                handleUndo()
-                setUndone(true)
-              }}
+              onClick={toggleChange}
             >
               <MaterialIcon type="undo" /> {t('undo')}
             </OLButton>

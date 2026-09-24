@@ -225,7 +225,7 @@ export default function WorkbenchChat({
             }
           }
         }
-      } else {
+      } else if (!(name in serverTools)) {
         addToolOutput({
           state: 'output-error',
           tool: name,

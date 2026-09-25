@@ -6,11 +6,14 @@ import {
   forwardRef,
   memo,
   useCallback,
+  useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
 import { useTranslation } from 'react-i18next'
 import { diffWordsWithSpace, type Change } from 'diff'
+import type { EditorView } from '@codemirror/view'
 import OLButton from '@/shared/components/ol/ol-button'
 import MaterialIcon from '@/shared/components/material-icon'
 import { useDetachCompileContext } from '@/shared/context/detach-compile-context'
@@ -176,18 +179,30 @@ const Code = forwardRef<HTMLElement, { children?: ReactNode }>(function Code(
   )
 })
 
-/** Open the target file without applying a suggestion during the document switch. */
+/** Wait for the target document to attach before editing its contents. */
 export function useEnsureCurrentPath() {
   const { currentDocumentId, currentDocument } = useEditorOpenDocContext()
   const { openDoc } = useEditorManagerContext()
   const { view } = useEditorViewContext()
-  const { findEntityByPath, pathInFolder } = useFileTreePathContext()
+  const { findEntityByPath } = useFileTreePathContext()
   const [notification, setNotification] = useState<WorkbenchError | null>(null)
+  const [opening, setOpening] = useState(false)
+  const pending = useRef(false)
+  const editor = { currentDocumentId, currentDocument, view }
+  const editorRef = useRef<typeof editor | null>(editor)
+  useEffect(() => {
+    editorRef.current = { currentDocumentId, currentDocument, view }
+    return () => { editorRef.current = null }
+  }, [currentDocumentId, currentDocument, view])
   return {
     notification,
     setNotification,
+    opening,
     ensureCurrentPath: useCallback(
       async (path?: string) => {
+        if (pending.current) return
+        pending.current = true
+        setOpening(true)
         setNotification(null)
         try {
           if (!path) {
@@ -197,29 +212,34 @@ export function useEnsureCurrentPath() {
           if (!found || found.type !== 'doc') {
             throw new Error('The file for this suggestion could not be found.')
           }
-          if (currentDocumentId && pathInFolder(currentDocumentId) === path) {
-            if (
-              currentDocument?.doc_id !== currentDocumentId ||
-              currentDocument.cm6?.view !== view
-            ) {
-              throw new Error('The file is still opening. Try again when it is ready.')
-            }
-            return true
-          }
           await openDoc(found.entity as any)
-          // Opening a file can finish before the editor has switched documents.
-          // Require a new click so the action uses the newly rendered document.
-          setNotification({
-            message: 'File opened. Review the suggestion and try again.',
-            type: 'info',
-          })
+          // openDoc resolves before React attaches the new document to CodeMirror.
+          const deadline = Date.now() + 5000
+          do {
+            await new Promise(resolve => window.setTimeout(resolve, 50))
+            const current = editorRef.current
+            if (!current) return
+            if (current.currentDocumentId !== found.entity._id) {
+              throw new Error('The open file changed before the suggestion could be applied.')
+            }
+            if (
+              current.view &&
+              current.currentDocument?.doc_id === found.entity._id &&
+              current.currentDocument.cm6?.view === current.view
+            ) return current.view
+          } while (Date.now() < deadline)
+          throw new Error('The file is still opening. Try again when it is ready.')
         } catch (error) {
           debugConsole.error(error)
-          setNotification(error instanceof Error ? error.message : true)
+          if (editorRef.current) {
+            setNotification(error instanceof Error ? error.message : true)
+          }
+        } finally {
+          pending.current = false
+          if (editorRef.current) setOpening(false)
         }
-        return false
       },
-      [currentDocumentId, currentDocument, view, findEntityByPath, openDoc, pathInFolder]
+      [findEntityByPath, openDoc]
     ),
   }
 }
@@ -276,10 +296,10 @@ export const SuggestionApproval = ({
   handleApproval,
 }: {
   part: any
-  handleApproval: (approved: boolean) => void
+  handleApproval: (view: EditorView | null) => void
 }) => {
   const { t } = useTranslation()
-  const { ensureCurrentPath, notification } = useEnsureCurrentPath()
+  const { ensureCurrentPath, notification, opening } = useEnsureCurrentPath()
   if (part.state !== 'input-available') {
     return null
   }
@@ -289,15 +309,16 @@ export const SuggestionApproval = ({
       notification={notification}
       actions={
         <>
-          <OLButton size="sm" variant="secondary" onClick={() => handleApproval(false)}>
+          <OLButton size="sm" variant="secondary" disabled={opening} onClick={() => handleApproval(null)}>
             {t('reject')}
           </OLButton>
           <OLButton
             size="sm"
             variant="secondary"
+            disabled={opening}
             onClick={async () => {
-              if (!(await ensureCurrentPath(part.input.path))) return
-              handleApproval(true)
+              const targetView = await ensureCurrentPath(part.input.path)
+              if (targetView) handleApproval(targetView)
             }}
           >
             {t('apply')} <MaterialIcon type="arrow_right_alt" />
@@ -315,19 +336,20 @@ export const SuggestionUndo = ({
   handleApply,
 }: {
   part: any
-  handleUndo: () => void
-  handleApply: () => void
+  handleUndo: (view: EditorView) => void
+  handleApply: (view: EditorView) => void
 }) => {
   const [undone, setUndone] = useState(false)
   const { t } = useTranslation()
-  const { ensureCurrentPath, notification, setNotification } = useEnsureCurrentPath()
+  const { ensureCurrentPath, notification, setNotification, opening } = useEnsureCurrentPath()
   const toggleChange = async () => {
-    if (!(await ensureCurrentPath(part.input.path))) return
+    const targetView = await ensureCurrentPath(part.input.path)
+    if (!targetView) return
     try {
       if (undone) {
-        handleApply()
+        handleApply(targetView)
       } else {
-        handleUndo()
+        handleUndo(targetView)
       }
       setUndone(!undone)
     } catch (error) {
@@ -348,6 +370,7 @@ export const SuggestionUndo = ({
             <OLButton
               size="sm"
               variant="secondary"
+              disabled={opening}
               onClick={toggleChange}
             >
               {t('apply')} <MaterialIcon type="arrow_right_alt" />
@@ -356,6 +379,7 @@ export const SuggestionUndo = ({
             <OLButton
               size="sm"
               variant="ghost"
+              disabled={opening}
               style={{ border: '1px solid transparent' }}
               onClick={toggleChange}
             >

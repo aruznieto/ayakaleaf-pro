@@ -144,8 +144,8 @@ export const clientTools: Record<string, ClientTool> = {
     },
   },
   get_diagnostics: {
-    title: () => 'Read diagnostics for the current file',
-    execute(input, view) {
+    title: () => 'Read compilation and editor diagnostics',
+    execute(input, view, { getCompileDiagnostics }) {
       const diagnostics: {
         fromLine: number
         toLine: number
@@ -153,6 +153,8 @@ export const clientTools: Record<string, ClientTool> = {
         message: string
       }[] = []
       forEachDiagnostic(view.state, (d, from, to) => {
+        // Compile annotations use a display fallback when the log has no line number.
+        if (d.source === 'compile') return
         diagnostics.push({
           fromLine: view.state.doc.lineAt(from).number,
           toLine: view.state.doc.lineAt(to).number,
@@ -160,7 +162,7 @@ export const clientTools: Record<string, ClientTool> = {
           message: d.message,
         })
       })
-      return diagnostics
+      return { ...getCompileDiagnostics(), editorDiagnostics: diagnostics }
     },
   },
   read_current_file: {
@@ -219,12 +221,12 @@ export const clientTools: Record<string, ClientTool> = {
         ? `Replace line ${fromLine}`
         : `Replace lines ${fromLine}-${toLine}`
     },
-    renderInput(part, { addToolOutput }, view) {
+    renderInput(part, { addToolOutput }) {
       return (
         <SuggestionApproval
           part={part}
-          handleApproval={approved => {
-            if (approved) {
+          handleApproval={view => {
+            if (view) {
               try {
                 applyLineChange(view, part.input)
                 addToolOutput({
@@ -254,10 +256,10 @@ export const clientTools: Record<string, ClientTool> = {
         />
       )
     },
-    renderOutput: (part, helpers, view) => (
+    renderOutput: part => (
       <SuggestionUndo
         part={part}
-        handleUndo={() => {
+        handleUndo={view => {
           applyLineChange(
             view,
             {
@@ -269,7 +271,7 @@ export const clientTools: Record<string, ClientTool> = {
           )
           sendMB('ai-chat-response', { button: 'undo' })
         }}
-        handleApply={() => {
+        handleApply={view => {
           applyLineChange(view, part.input)
           sendMB('ai-chat-response', { button: 'apply' })
         }}
@@ -349,8 +351,8 @@ export const clientTools: Record<string, ClientTool> = {
   },
   compile: {
     title: () => 'Compile',
-    async execute(input, view, { startCompile }) {
-      await startCompile()
+    async execute(input, view, { compile }, signal) {
+      return await compile(signal)
     },
   },
   set_compiler: {

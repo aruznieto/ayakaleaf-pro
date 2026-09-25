@@ -2,7 +2,7 @@
  * Provides project actions for browser-side AI tools: file navigation and
  * creation, compilation, compiler selection, and PDF inspection.
  */
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useProjectContext } from '@/shared/context/project-context'
 import { useFileTreePathContext } from '@/features/file-tree/contexts/file-tree-path'
 import { useFileTreeData } from '@/shared/context/file-tree-data-context'
@@ -16,11 +16,30 @@ import { ToolRejectionError } from '../errors'
 
 const MAX_PDF_PAGE_PIXELS = 1048576 // downscale rendered pages to ~1MP
 
+type CompileState = ReturnType<typeof useDetachCompileContext>
+
+function getCompileDiagnostics(state: CompileState) {
+  return {
+    compiling: state.compiling,
+    hasUncompiledChanges: state.uncompiled || state.editedSinceCompileStarted,
+    logsReady: Boolean(state.logEntries),
+    error: state.error ?? null,
+    diagnostics: state.logEntries?.all.map(entry => ({
+      file: entry.file ?? null,
+      line: entry.line ?? null,
+      severity: entry.level,
+      message: entry.message,
+      raw: entry.raw,
+    })) ?? [],
+  }
+}
+
 export type WorkbenchFileActions = {
   createFile: (path: string) => Promise<void>
   listFiles: () => Promise<string[]>
   openFile: (path: string, signal: AbortSignal) => Promise<string>
-  startCompile: (options?: any) => Promise<void>
+  getCompileDiagnostics: () => ReturnType<typeof getCompileDiagnostics>
+  compile: (signal: AbortSignal) => Promise<ReturnType<typeof getCompileDiagnostics>>
   setCompiler: ReturnType<typeof useProjectSettingsContext>['setCompiler']
   viewPdfPage: (page: number, signal: AbortSignal) => Promise<string | undefined>
   viewPdfStructureTree: (signal: AbortSignal) => Promise<unknown>
@@ -31,8 +50,39 @@ export function useWorkbenchFileActions(): WorkbenchFileActions {
   const { findEntityByPath } = useFileTreePathContext()
   const { fileTreeData } = useFileTreeData()
   const { openDoc, openDocs } = useEditorManagerContext()
-  const { startCompile, pdfUrl } = useDetachCompileContext()
+  const compileState = useDetachCompileContext()
+  const { startCompile, pdfUrl } = compileState
+  const compileStateRef = useRef(compileState)
+  useEffect(() => {
+    compileStateRef.current = compileState
+  }, [compileState])
   const { setCompiler } = useProjectSettingsContext()
+
+  const readCompileDiagnostics = useCallback(
+    () => getCompileDiagnostics(compileStateRef.current),
+    []
+  )
+
+  const compile = useCallback(async (signal: AbortSignal) => {
+    signal.throwIfAborted()
+    const previous = compileStateRef.current
+    if (previous.compiling) {
+      throw new ToolRejectionError('A compilation is already running. Wait for it to finish before reading diagnostics.')
+    }
+    await startCompile()
+
+    // Log files are loaded after the compile request resolves; never return the previous result.
+    const deadline = Date.now() + 15_000
+    while (Date.now() < deadline) {
+      await new Promise(resolve => window.setTimeout(resolve, 50))
+      signal.throwIfAborted()
+      const current = compileStateRef.current
+      if (!current.compiling && current.logEntries && current.logEntries !== previous.logEntries) {
+        return getCompileDiagnostics(current)
+      }
+    }
+    throw new ToolRejectionError('The new compilation logs are not available yet. Check the compilation panel before retrying.')
+  }, [startCompile])
 
   const createFile = useCallback(
     async (path: string) => {
@@ -155,12 +205,13 @@ export function useWorkbenchFileActions(): WorkbenchFileActions {
       createFile,
       listFiles,
       openFile,
-      startCompile,
+      getCompileDiagnostics: readCompileDiagnostics,
+      compile,
       setCompiler,
       viewPdfPage,
       viewPdfStructureTree,
     }),
-    [createFile, listFiles, openFile, startCompile, setCompiler, viewPdfPage, viewPdfStructureTree]
+    [createFile, listFiles, openFile, readCompileDiagnostics, compile, setCompiler, viewPdfPage, viewPdfStructureTree]
   )
 }
 

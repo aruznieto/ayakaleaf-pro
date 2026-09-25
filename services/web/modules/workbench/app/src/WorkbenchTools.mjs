@@ -37,8 +37,10 @@ export const CLIENT_TOOLS = {
 
   get_diagnostics: tool({
     description:
-      'Get the current LaTeX diagnostics (lint errors and warnings) for the ' +
-      'file open in the editor, as an array of { fromLine, toLine, severity, message }.',
+      'Read the latest project compilation diagnostics, including file, line, ' +
+      'severity, message and raw log context, plus editor lint diagnostics for ' +
+      'the current file. A null line means the compiler did not report a line. ' +
+      'Check logsReady, compiling and hasUncompiledChanges before treating logs as current.',
     inputSchema: z.object({}),
   }),
 
@@ -106,7 +108,10 @@ export const CLIENT_TOOLS = {
   }),
 
   compile: tool({
-    description: 'Compile the current project.',
+    description:
+      'Compile the current project and wait for its new diagnostics. Returns ' +
+      'compilation errors, warnings and their raw log context; inspect these ' +
+      'to determine whether compilation succeeded.',
     inputSchema: z.object({}),
   }),
 

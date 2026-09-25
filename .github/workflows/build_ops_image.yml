@@ -29,7 +29,7 @@ env:
 
 jobs:
   build-image:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       # If the event is a pull request, checkout the head sha of the PR
       - name: "Checkout Current Repository"

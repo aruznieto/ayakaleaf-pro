@@ -24,7 +24,7 @@ jobs:
       matrix:
         include:
         - platform: linux/amd64
-          runner: ubuntu-latest
+          runner: ubuntu-24.04
         - platform: linux/arm64
           runner: ubuntu-24.04-arm
     runs-on: ${{ matrix.runner }}
@@ -143,7 +143,7 @@ jobs:
     outputs:
       version: ${{ steps.set_version.outputs.version }}
   merge:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs:
       - build
     steps:
@@ -200,7 +200,7 @@ jobs:
       matrix:
         include:
         - platform: linux/amd64
-          runner: ubuntu-latest
+          runner: ubuntu-24.04
         - platform: linux/arm64
           runner: ubuntu-24.04-arm
     runs-on: ${{ matrix.runner }}
@@ -287,7 +287,7 @@ jobs:
       version: ${{ steps.set_version.outputs.version }}
 
   merge_git_bridge:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs:
       - build_git_bridge
     steps:

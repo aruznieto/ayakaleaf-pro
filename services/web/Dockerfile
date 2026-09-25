@@ -64,7 +64,10 @@ FROM deps-prod AS deps
 ENV CYPRESS_INSTALL_BINARY=0
 
 COPY tsconfig.backend.json /overleaf/
-RUN cd /overleaf && yarn workspaces focus @overleaf/web overleaf
+RUN cd /overleaf \
+    && printf '%s\n' '"--install.mutex" "file:/tmp/overleaf-yarn-classic-mutex"' > /tmp/.yarnrc \
+    && yarn workspaces focus @overleaf/web overleaf \
+    && rm /tmp/.yarnrc
 
 
 # the dev is suitable for running tests

@@ -38,16 +38,28 @@ export function TPRFileViewRefreshError({
 
   if (provider) {
     if (!refreshError) {
-      message = t(provider.i18n.loadingError)
+      message =
+        provider.id === 'zotero'
+          ? t('zotero_reference_loading_error')
+          : t('mendeley_reference_loading_error')
     } else if (refreshError?.includes('not linked')) {
-      message = t(provider.i18n.loadingErrorForbidden)
+      message =
+        provider.id === 'zotero'
+          ? t('zotero_reference_loading_error_forbidden')
+          : t('mendeley_reference_loading_error_forbidden')
     } else if (refreshError === 'forbidden' || refreshError?.includes('403')) {
-      message = t(provider.i18n.loadingErrorForbidden)
+      message =
+        provider.id === 'zotero'
+          ? t('zotero_reference_loading_error_forbidden')
+          : t('mendeley_reference_loading_error_forbidden')
     } else if (
       refreshError === 'expired' ||
       refreshError?.includes('token expired')
     ) {
-      message = t(provider.i18n.loadingErrorExpired)
+      message =
+        provider.id === 'zotero'
+          ? t('zotero_reference_loading_error_expired')
+          : t('mendeley_reference_loading_error_expired')
     }
   }
 

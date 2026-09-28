@@ -105,7 +105,7 @@ function ZoteroCreateFilePane() {
       const data: Record<string, string> = {}
 
       if (selectedGroupId) {
-        data.zoteroGroupId = selectedGroupId
+        data.group_id = selectedGroupId
       }
 
       finishCreatingLinkedFile({

@@ -105,7 +105,7 @@ function MendeleyCreateFilePane() {
       const data: Record<string, string> = {}
 
       if (selectedGroupId) {
-        data.mendeleyGroupId = selectedGroupId
+        data.group_id = selectedGroupId
       }
 
       finishCreatingLinkedFile({

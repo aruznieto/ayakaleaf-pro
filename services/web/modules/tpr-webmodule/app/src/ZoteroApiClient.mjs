@@ -129,9 +129,14 @@ async function _fetchBibtex(apiKey, basePath) {
     })
     const fullUrl = `${url}?format=bibtex&limit=${limit}&start=${start}`
     try {
-      const { body: bibtex, response } = await fetchStringWithResponse(
+      const { body, response } = await fetchStringWithResponse(
         fullUrl,
         withProxy({ headers })
+      )
+      // Zotero exports attachments and notes as empty @misc entries
+      const bibtex = body.replace(
+        /^@misc\{noauthor_notitle_nodate(?:-\d+)?,\r?\n\}\r?\n*/gm,
+        ''
       )
       if (bibtex.trim()) {
         allBibtex += bibtex + '\n'

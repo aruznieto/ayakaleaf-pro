@@ -53,7 +53,10 @@ const OIDCAuthenticationController = {
       }
     )(req, res, next)
   },
-  async doPassportLogin(req, issuer, profile, context, idToken, accessToken, refreshToken, done) {
+  async doPassportLogin(req, issuer, uiProfile, idProfile, context, idToken, accessToken, refreshToken, params, done) {
+    // The 10-arg form is the only one where passport-openidconnect exposes the raw
+    // userinfo claims (uiProfile._json), which non-standard admin claims live in
+    const profile = { ...idProfile, ...uiProfile }
     let user, info
     try {
       if(req.session.intent === 'link') {

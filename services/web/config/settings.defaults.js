@@ -398,7 +398,7 @@ module.exports = {
     compileGroup: 'standard',
     references: true,
     trackChanges: true,
-    offlineMode: false,
+    offlineMode: true,
   }),
 
   // featuresEpoch: 'YYYY-MM-DD',
@@ -1313,7 +1313,8 @@ module.exports.splitTestOverrides = {
   'import-markdown': 'enabled',
   'export-docx': 'enabled',
   'export-markdown': 'enabled',
-  'export-html': 'enabled'
+  'export-html': 'enabled',
+  'intermittent-connection-improvements': 'enabled'
 }
 
 module.exports.oauthProviders = {

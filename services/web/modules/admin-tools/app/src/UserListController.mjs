@@ -547,6 +547,8 @@ async function restoreDeletedUser(req, res, next) {
     }
 
     userData.suspended = false
+    // users deleted before the analyticsId back-fill migration have no analyticsId
+    userData.analyticsId ??= userData._id.toString()
     await User.create(userData)
     await DeletedUser.deleteOne({ "user._id": userId })
 

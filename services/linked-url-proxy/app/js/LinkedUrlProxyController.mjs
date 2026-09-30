@@ -42,10 +42,10 @@ function isBlockedIp(ipStr, targetUrl) {
 }
 
 async function checkUrlAccess(hostname, targetUrl) {
+  // Behind an outbound proxy, the proxy resolves hosts itself and is
+  // responsible for blocking internal networks; only IP literals are checked.
+  if (Settings.outboundProxy && !ipaddr.isValid(hostname.replace(/^\[|\]$/g, ''))) return null
   const records = await dns.lookup(hostname, { all: true }).catch(() => [])
-  // Behind an outbound proxy, local DNS may not resolve external hosts; the
-  // proxy resolves them and is responsible for blocking internal networks.
-  if (!records.length && Settings.outboundProxy) return null
   if (!records.length) {
     const err = new Error(`DNS lookup failed for ${hostname}`)
     err.info = { status: 421 }

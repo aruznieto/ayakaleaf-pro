@@ -112,6 +112,10 @@ jobs:
           tags: |
             sharelatex/sharelatex:latest
           annotations: |
+            org.opencontainers.image.title=overleaf-pro-ops
+            org.opencontainers.image.description=Overleaf Pro operations image, built from every push to server-pro, maintained by ayaka-notes. For testing only.
+            org.opencontainers.image.source=https://github.com/ayaka-notes/ayakaleaf-pro
+            org.opencontainers.image.version=${{ steps.vars.outputs.MONOREPO_REVISION }}
             space.ayaka.overleaf-pro.ops.revision=${{ steps.vars.outputs.MONOREPO_REVISION }}
           # We don't want -${{ github.ref_name }} limit, just more cache hit
           no-cache: ${{ inputs.no_cache || false }}

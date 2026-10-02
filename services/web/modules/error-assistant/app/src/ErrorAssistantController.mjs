@@ -136,7 +136,7 @@ async function suggestFix(req, res) {
           break
         case 'tool-call':
           // The client expects structured tool arguments to render an edit.
-          if (part.input && typeof part.input === 'object') {
+          if (!part.invalid && part.input && typeof part.input === 'object') {
             send({ tool: part.toolName, args: part.input })
           }
           break

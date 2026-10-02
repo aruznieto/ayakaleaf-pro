@@ -160,6 +160,11 @@ async function getTemplate(key, val) {
     logger.warn('No key or val provided to getTemplate')
     return null
   }
+  // key and val can come from the query string (/api/template): only allow
+  // plain lookups, never operators such as $where
+  if (!['_id', 'name'].includes(key) || typeof val !== 'string') {
+    return null
+  }
 
   const query = { [key]: val }
   const template = await Template.findOne(query).exec()

@@ -3,8 +3,10 @@
 # container on the toolkit's docker network.
 #
 #   make setup [SUITE=<suite>]   deploy, layering suites/<suite>/ config if any
-#   make test_<suite>            run suites/<suite>/*.spec.ts, then each variant
+#                                and starting the services/ it lists in services
+#   make test SUITE=<suite>      run suites/<suite>/*.spec.ts, then each variant
 #                                subfolder with its own config (see bin/run-suite)
+#   make test_<suite>            the same for a top-level suite
 #   make clean                   remove the deployment and its data
 
 SHELL := /bin/bash
@@ -25,10 +27,12 @@ CYPRESS_IMAGE ?= overleaf-pro-e2e-cypress
 STARTUP_TIMEOUT ?= 300
 
 SUITE ?=
+# Extra services a suite needs, listed in suites/<suite>/services
+SERVICES = $(if $(SUITE),$(shell cat suites/$(SUITE)/services 2>/dev/null))
 # Host port, only needed when the toolkit default (80) is taken locally
 OVERLEAF_PORT ?=
 
-.PHONY: setup clean
+.PHONY: setup test clean
 
 setup:
 	@if [[ -e "$(TOOLKIT_DIR)" ]]; then \
@@ -61,19 +65,32 @@ setup:
 		--file Dockerfile.cypress \
 		--tag $(CYPRESS_IMAGE) \
 		$(MONOREPO)
+	@for service in $(SERVICES); do \
+		TOOLKIT_DIR=$(TOOLKIT_DIR) services/$$service/bin/prepare; \
+	done
 	$(TOOLKIT_DIR)/bin/up -d
 	bin/wait-for-overleaf $(STARTUP_TIMEOUT)
+	@for service in $(SERVICES); do \
+		TOOLKIT_DIR=$(TOOLKIT_DIR) TOOLKIT_NETWORK=$(TOOLKIT_NETWORK) services/$$service/bin/up; \
+	done
 
-test_%:
-	@if [[ ! -d "suites/$*" ]]; then echo "unknown suite '$*'"; exit 1; fi
+test:
+	@if [[ ! -d "suites/$(SUITE)" ]]; then echo "unknown suite '$(SUITE)'"; exit 1; fi
 	TOOLKIT_DIR=$(TOOLKIT_DIR) \
 	TOOLKIT_NETWORK=$(TOOLKIT_NETWORK) \
 	TEST_ROOT=$(TEST_ROOT) \
 	CYPRESS_IMAGE=$(CYPRESS_IMAGE) \
 	STARTUP_TIMEOUT=$(STARTUP_TIMEOUT) \
-		bin/run-suite $*
+		bin/run-suite $(SUITE)
+
+# Shorthand for suites at the top level, e.g. make test_launchpad
+test_%:
+	$(MAKE) test SUITE=$*
 
 clean:
+	@for down in services/*/bin/down; do \
+		TOOLKIT_NETWORK=$(TOOLKIT_NETWORK) $$down; \
+	done
 	@if [[ -d "$(TOOLKIT_DIR)" ]]; then \
 		$(TOOLKIT_DIR)/bin/docker-compose down --volumes --remove-orphans --timeout 0; \
 		docker run --rm --volume $(TOOLKIT_DIR):/toolkit --entrypoint rm $(OVERLEAF_IMAGE) -rf /toolkit/data; \

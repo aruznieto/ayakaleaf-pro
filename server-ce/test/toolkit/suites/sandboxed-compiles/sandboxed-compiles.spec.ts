@@ -1,27 +1,18 @@
 import { v4 as uuid } from 'uuid'
 import { login } from '../../../helpers/login'
 import { ensureUserExists } from '../../../helpers/users'
-import { createProject, openProject } from '../../../helpers/project'
 import {
-  prepareWaitForNextCompileSlot,
-  stopCompile,
-} from '../../../helpers/compile'
+  openNewProject,
+  pdfPreview,
+  projectName,
+} from '../../../helpers/project'
+import { stopCompile } from '../../../helpers/compile'
 import { waitUntilScrollingFinished } from '../../../helpers/waitUntilScrollingFinished'
 
 // Compiles run in sibling containers of the texlive-basic images configured
 // in variables.env. Every test opens its own fresh project.
 
-// Project names go into \title, keep them free of spaces: the PDF text layer
-// drops those.
-function projectName(prefix: string) {
-  return `${prefix}-${uuid().slice(0, 8)}`
-}
-
 const PDF_VIEWER = '[data-testid="pdfjs-viewer-inner"]'
-
-function pdfPreview() {
-  return cy.findByRole('region', { name: 'PDF preview' })
-}
 
 function editor() {
   return cy.findByRole('textbox', { name: 'Source Editor editing' })
@@ -72,16 +63,6 @@ describe('sandboxed compiles', function () {
   beforeEach(function () {
     login(user)
   })
-
-  // Creates a blank project, opens it and waits for the first compile.
-  function openNewProject(name = projectName('Project')) {
-    const compiler = prepareWaitForNextCompileSlot()
-    createProject(name).then(projectId => {
-      compiler.waitForCompile(() => openProject(projectId))
-    })
-    pdfPreview().should('contain.text', name)
-    return compiler
-  }
 
   it('compiles a new project to a PDF with TeX Live 2026', function () {
     const name = projectName('Sandboxed')

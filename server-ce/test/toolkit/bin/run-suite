@@ -13,8 +13,16 @@ set -euo pipefail
 
 suite=$1
 
+# Values from the suite's services, e.g. CYPRESS_AUTHENTIK_TOKEN, which
+# Cypress exposes as Cypress.env('AUTHENTIK_TOKEN')
+env_files=()
+for file in "$TOOLKIT_DIR"/services/*/cypress.env; do
+  [[ -f "$file" ]] && env_files+=(--env-file "$file")
+done
+
 function run_cypress() {
   docker run --rm \
+    "${env_files[@]}" \
     --network "$TOOLKIT_NETWORK" \
     --shm-size 2g \
     --volume "$TEST_ROOT:/overleaf/server-ce/test" \
@@ -26,7 +34,9 @@ function run_cypress() {
     cypress run --browser chrome
 }
 
-run_cypress "suites/$suite"
+if compgen -G "suites/$suite/*.spec.ts" >/dev/null; then
+  run_cypress "suites/$suite"
+fi
 
 for dir in "suites/$suite"/*/; do
   dir=${dir%/}

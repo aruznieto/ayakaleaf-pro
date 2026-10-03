@@ -26,7 +26,8 @@ If port 80 is already in use on your machine, add `OVERLEAF_PORT=8080` to
 
 ## Suites
 
-One folder per module in `toolkit/suites/`:
+One folder per module in `toolkit/suites/`, named and nested like
+`services/web/modules`:
 
 - `launchpad/` – creating the first admin, status checks, admin adds a user.
 - `login-register/` – login, logout and public sign up with email and
@@ -34,6 +35,16 @@ One folder per module in `toolkit/suites/`:
   one email domain.
 - `sandboxed-compiles/` – compiling in sibling containers, switching between
   two TeX Live images, XeLaTeX, errors, stopping a compile, SyncTeX.
+- `template-gallery/` – publishing a project as a template, the gallery
+  (categories, search, sort, pages), editing, overwriting and deleting
+  templates, creating projects from them, permissions.
+- `authentication/ldap/`, `authentication/saml/`, `authentication/oidc/` –
+  login through [goauthentik](https://goauthentik.io), admin mapping and its
+  updates on login. LDAP and SAML start with the launchpad's email-only admin
+  form on the empty instance. Each has a variant without admin mapping, OIDC
+  one with allowed email domains too. These are separate suites, run them
+  with `make setup SUITE=authentication/saml` and
+  `make test SUITE=authentication/saml`.
 
 Things that need email (activation mails, password reset) are not tested.
 
@@ -49,6 +60,10 @@ Things that need email (activation mails, password reset) are not tested.
   applies them, restarts Overleaf and runs the variant after the main specs.
 - `helpers/` – small functions shared by tests, like logging in or creating
   a user or a project.
+- `toolkit/services/` – extra containers a suite needs, e.g. `authentik/`.
+  A suite lists them in its `services` file. `make setup` starts them next to
+  Overleaf on the toolkit's network, `make clean` removes them. Their secrets
+  are generated on every setup, none are stored in the repository.
 - `toolkit/bin/` – scripts used by the Makefile.
 - `toolkit/Makefile` – the `setup`, `test_<name>` and `clean` commands.
 - Everything else (`Dockerfile.cypress`, `cypress.config.ts`,

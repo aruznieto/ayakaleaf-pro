@@ -166,7 +166,11 @@ jobs:
           [
             launchpad,
             login-register,
-            sandboxed-compiles
+            sandboxed-compiles,
+            template-gallery,
+            authentication/ldap,
+            authentication/saml,
+            authentication/oidc
           ]
     steps:
       - name: "Checkout Current Repository"
@@ -189,7 +193,7 @@ jobs:
       - name: "Run E2E Tests"
         working-directory: ./server-ce/test/toolkit
         run: |
-          make test_${{matrix.suite}}
+          make test SUITE=${{matrix.suite}}
 
       # --- Collect Results On Failure ---
       - name: "Print Overleaf Logs"
@@ -197,11 +201,18 @@ jobs:
         run: |
           docker logs --tail 200 sharelatex
           docker exec sharelatex bash -c 'tail -n 100 /var/log/overleaf/*.log'
+      # Artifact names cannot contain the slash of nested suites
+      - name: "Get Artifact Name"
+        id: artifact
+        if: failure()
+        run: |
+          suite="${{matrix.suite}}"
+          echo "name=e2e-${suite//\//-}-screenshots" >> $GITHUB_OUTPUT
       - name: "Upload Cypress Screenshots"
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: e2e-${{matrix.suite}}-screenshots
+          name: ${{steps.artifact.outputs.name}}
           path: server-ce/test/toolkit/cypress/results
           if-no-files-found: ignore
           retention-days: 7

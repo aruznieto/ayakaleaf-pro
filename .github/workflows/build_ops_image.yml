@@ -127,6 +127,7 @@ jobs:
 
       # --- Push Server Image ---
       - name: "ReTag Docker Image And Push"
+        id: push
         run: |
           cd ./server-ce
           github_short_sha=$(echo ${{ github.sha }} | head -c7)
@@ -139,6 +140,7 @@ jobs:
           docker tag sharelatex/sharelatex:latest ${{env.DOCKER_REGISTRY}}/${{env.IMAGE_NAME}}/ops:$tag
           docker push ${{env.DOCKER_REGISTRY}}/${{env.IMAGE_NAME}}/ops:latest
           docker push ${{env.DOCKER_REGISTRY}}/${{env.IMAGE_NAME}}/ops:$tag
+          echo "tag=$tag" >> $GITHUB_OUTPUT
 
       # --- Retention Policy: Delete old images ---
       - name: Delete old images
@@ -149,3 +151,57 @@ jobs:
           account: ayaka-notes
           tag-selection: both
           token: ${{ secrets.ORGTOKEN }}
+    outputs:
+      ops-tag: ${{ steps.push.outputs.tag }}
+
+  # Deploy the image pushed above with the toolkit and run one e2e suite per
+  # runner, see server-ce/test/README.md
+  e2e-test:
+    runs-on: ubuntu-24.04
+    needs: build-image
+    strategy:
+      fail-fast: false
+      matrix:
+        suite:
+          [
+            launchpad,
+            login-register,
+            sandboxed-compiles
+          ]
+    steps:
+      - name: "Checkout Current Repository"
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+
+      - name: "Login to GitHub Container Registry"
+        uses: docker/login-action@v4
+        with:
+          registry: ${{env.DOCKER_REGISTRY}}
+          username: ${{github.actor}}
+          password: ${{secrets.GITHUB_TOKEN}}
+
+      # --- Deploy And Test ---
+      - name: "Setup Overleaf With Toolkit"
+        working-directory: ./server-ce/test/toolkit
+        run: |
+          make setup SUITE=${{matrix.suite}} OVERLEAF_IMAGE=${{env.DOCKER_REGISTRY}}/${{env.IMAGE_NAME}}/ops:${{needs.build-image.outputs.ops-tag}}
+      - name: "Run E2E Tests"
+        working-directory: ./server-ce/test/toolkit
+        run: |
+          make test_${{matrix.suite}}
+
+      # --- Collect Results On Failure ---
+      - name: "Print Overleaf Logs"
+        if: failure()
+        run: |
+          docker logs --tail 200 sharelatex
+          docker exec sharelatex bash -c 'tail -n 100 /var/log/overleaf/*.log'
+      - name: "Upload Cypress Screenshots"
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-${{matrix.suite}}-screenshots
+          path: server-ce/test/toolkit/cypress/results
+          if-no-files-found: ignore
+          retention-days: 7

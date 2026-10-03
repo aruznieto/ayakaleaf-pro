@@ -1,0 +1,13 @@
+{
+  "name": "@overleaf/server-ce-test",
+  "description": "e2e tests for Overleaf Pro, run against a toolkit deployment",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@testing-library/cypress": "10.1.0",
+    "@types/uuid": "^9.0.8",
+    "cypress": "15.12.0",
+    "typescript": "^5.0.4",
+    "uuid": "^9.0.1"
+  }
+}

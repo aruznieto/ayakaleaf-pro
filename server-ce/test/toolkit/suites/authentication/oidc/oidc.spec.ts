@@ -1,4 +1,5 @@
 import {
+  AUTHENTIK_URL,
   authentikLogin,
   currentUser,
   idpEmail,
@@ -120,5 +121,34 @@ describe('linking OIDC to an account', function () {
     // The link flow returns to the settings page, still logged in as carol
     cy.url({ timeout: 30_000 }).should('contain', '/user/settings')
     currentUser().its('email').should('equal', idpEmail('carol'))
+  })
+})
+
+describe('OIDC logout', function () {
+  it('logs out through the IdP and requires a fresh SSO login', function () {
+    ssoLogin('/oidc/login', 'alice')
+    cy.request(`${AUTHENTIK_URL}/api/v3/core/users/me/`)
+      .its('body.user.username')
+      .should('eq', 'alice')
+    cy.intercept('GET', '**/application/o/ayakaleaf-oidc/end-session/**').as(
+      'idpLogout'
+    )
+
+    cy.visit('/logout')
+    cy.findByRole('button', { name: /^Log Out$/ }).click()
+    cy.wait('@idpLogout').then(({ request, response }) => {
+      expect(response?.statusCode, 'IdP received the logout request').to.be.lessThan(
+        400
+      )
+      expect(request.headers.cookie, 'IdP cookies on the logout request').to.exist
+    })
+
+    cy.location('origin', { timeout: 30_000 }).should('eq', 'http://sharelatex')
+    cy.visit('/project')
+    cy.url().should('contain', '/login')
+    // Do not clear cookies: the IdP must have ended the existing SSO session.
+    cy.get('a[href="/oidc/login"]').click()
+    authentikLogin('alice')
+    cy.url({ timeout: 30_000 }).should('contain', '/project')
   })
 })

@@ -167,6 +167,7 @@ jobs:
             launchpad,
             login-register,
             sandboxed-compiles,
+            symbol-palette,
             template-gallery,
             authentication/ldap,
             authentication/saml,

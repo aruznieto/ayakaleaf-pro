@@ -17,7 +17,7 @@ function firstOidcLogin(username: string) {
   cy.clearAllCookies()
   // Start on Overleaf, see ssoLogin
   cy.visit('/login')
-  cy.visit('/oidc/login')
+  cy.get('a[href="/oidc/login"]').click()
   authentikLogin(username)
 }
 

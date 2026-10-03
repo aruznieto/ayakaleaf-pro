@@ -35,6 +35,8 @@ One folder per module in `toolkit/suites/`, named and nested like
   one email domain.
 - `sandboxed-compiles/` – compiling in sibling containers, switching between
   two TeX Live images, XeLaTeX, errors, stopping a compile, SyncTeX.
+- `symbol-palette/` – searching by command, description and character,
+  empty search results, clicking symbols to insert them at the editor cursor.
 - `template-gallery/` – publishing a project as a template, the gallery
   (categories, search, sort, pages), editing, overwriting and deleting
   templates, creating projects from them, permissions.

@@ -46,6 +46,8 @@ setup:
 	git clone --quiet $(TOOLKIT_REPO) $(TOOLKIT_DIR)
 	git -C $(TOOLKIT_DIR) checkout --quiet $(TOOLKIT_REF)
 	$(TOOLKIT_DIR)/bin/init
+	cp config/settings.cjs $(TOOLKIT_DIR)/config/
+	cp config/docker-compose.e2e.yml $(TOOLKIT_DIR)/config/docker-compose.override.yml
 	bin/apply-config $(TOOLKIT_DIR)/config/overleaf.rc config/overleaf.rc
 	bin/apply-config $(TOOLKIT_DIR)/config/variables.env config/variables.env
 	@for f in overleaf.rc variables.env; do \

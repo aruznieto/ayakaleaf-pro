@@ -1,11 +1,5 @@
 import { compileProject } from './project'
-import { createRateLimitWaiter } from './rateLimit'
 import { postWithCsrf } from './request'
-
-// The template pages and APIs share a limit of 60 requests per minute.
-export const waitForTemplateSlot = createRateLimitWaiter(50, 60_000)
-// Publishing is limited to 20 a minute.
-const waitForPublishSlot = createRateLimitWaiter(18, 60_000)
 
 export type TemplateFields = {
   name: string
@@ -21,7 +15,6 @@ export type TemplateFields = {
 // after compiling it unless a build is given. Yields the response.
 export function publishTemplate(projectId: string, fields: TemplateFields) {
   const post = (build: string) => {
-    waitForPublishSlot()
     return postWithCsrf(`/template/new/${projectId}`, {
       category: '/templates/academic-journal',
       license: 'cc_by_4.0',
@@ -38,7 +31,6 @@ export function publishTemplate(projectId: string, fields: TemplateFields) {
 
 // The template as the details page gets it, or null.
 export function getTemplate(templateId: string) {
-  waitForTemplateSlot()
   // .its('body') would fail on the null of an unknown template
   return cy
     .request(`/api/template?key=_id&val=${templateId}`)
@@ -49,7 +41,6 @@ export function listTemplates(params: Record<string, string | number>) {
   const query = new URLSearchParams(
     Object.entries(params).map(([key, value]) => [key, String(value)])
   )
-  waitForTemplateSlot()
   return cy.request(`/api/templates?${query}`).its('body')
 }
 
@@ -65,12 +56,10 @@ export function openAsTemplate(templateId: string): Cypress.Chainable<string> {
 }
 
 export function visitTemplate(templateId: string) {
-  waitForTemplateSlot()
   cy.visit(`/template/${templateId}`)
 }
 
 // Requests a template route without failing on its status.
 export function requestTemplateRoute(url: string) {
-  waitForTemplateSlot()
   return cy.request({ url, failOnStatusCode: false, encoding: 'binary' })
 }

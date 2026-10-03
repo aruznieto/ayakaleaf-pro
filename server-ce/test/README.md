@@ -25,6 +25,9 @@ If port 80 is already in use on your machine, add `OVERLEAF_PORT=8080` to
 `make setup`. To test an image other than the latest ops image, add
 `OVERLEAF_IMAGE=<image>`.
 
+The E2E settings disable request rate limits. The login-register suite sets
+`E2E_DISABLE_RATE_LIMITS=false` because it also tests registration rate limiting.
+
 ## Suites
 
 One folder per module in `toolkit/suites/`, named and nested like

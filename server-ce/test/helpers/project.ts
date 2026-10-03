@@ -1,6 +1,5 @@
 import { v4 as uuid } from 'uuid'
 import { prepareWaitForNextCompileSlot } from './compile'
-import { createRateLimitWaiter } from './rateLimit'
 import { postWithCsrf } from './request'
 
 // Project names go into \title, keep them free of spaces: the PDF text layer
@@ -13,16 +12,12 @@ export function pdfPreview() {
   return cy.findByRole('region', { name: 'PDF preview' })
 }
 
-// The project list allows 30 visits a minute per user. Visit it only when the
-// current page has no CSRF token for the requests that follow.
+// Visit the project list only when the current page has no CSRF token.
 function visitForCsrfToken() {
   cy.document().then(doc => {
     if (!doc.querySelector('meta[name="ol-csrfToken"]')) cy.visit('/project')
   })
 }
-
-// Creating projects is limited to 20 a minute, leave a little room.
-const waitForCreateProjectSlot = createRateLimitWaiter(18, 60_000)
 
 // Creates a project over HTTP and returns its id. A blank project's main.tex
 // uses the project name as title and has an "Introduction" section.
@@ -30,7 +25,6 @@ export function createProject(
   projectName: string,
   template: 'none' | 'example' = 'none'
 ): Cypress.Chainable<string> {
-  waitForCreateProjectSlot()
   visitForCsrfToken()
   return postWithCsrf('/project/new', { projectName, template }).then(
     response => {

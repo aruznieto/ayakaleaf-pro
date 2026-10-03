@@ -1,6 +1,6 @@
 import {
   isSiteAdmin,
-  resetAuthentikGroups,
+  resetAuthentikUsers,
   ssoLogin,
 } from '../../../../../helpers/auth'
 
@@ -10,7 +10,7 @@ import {
 // following variants expect.
 
 before(function () {
-  resetAuthentikGroups()
+  resetAuthentikUsers()
 })
 
 describe('OIDC admin mapped from a single valued claim', function () {

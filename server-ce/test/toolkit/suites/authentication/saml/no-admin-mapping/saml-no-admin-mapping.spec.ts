@@ -1,6 +1,6 @@
 import {
   isSiteAdmin,
-  resetAuthentikGroups,
+  resetAuthentikUsers,
   setAuthentikGroup,
   ssoLogin,
 } from '../../../../../helpers/auth'
@@ -9,7 +9,7 @@ import {
 // a login must keep whatever admin flag the account has.
 
 before(function () {
-  resetAuthentikGroups()
+  resetAuthentikUsers()
 })
 
 describe('SAML login without admin mapping', function () {

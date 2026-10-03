@@ -1,7 +1,7 @@
 import {
   authentikLogin,
   idpEmail,
-  resetAuthentikGroups,
+  resetAuthentikUsers,
   ssoLogin,
 } from '../../../../../helpers/auth'
 
@@ -10,7 +10,7 @@ import {
 // an account on the first OIDC login, existing accounts are not affected.
 
 before(function () {
-  resetAuthentikGroups()
+  resetAuthentikUsers()
 })
 
 function firstOidcLogin(username: string) {

@@ -1,6 +1,6 @@
 import {
   isSiteAdmin,
-  resetAuthentikGroups,
+  resetAuthentikUsers,
   ssoLogin,
 } from '../../../../../helpers/auth'
 
@@ -9,7 +9,7 @@ import {
 // Leaves bob an admin and alice not, admin-field-scalar runs next.
 
 before(function () {
-  resetAuthentikGroups()
+  resetAuthentikUsers()
 })
 
 describe('OIDC admin mapped from the email claim', function () {

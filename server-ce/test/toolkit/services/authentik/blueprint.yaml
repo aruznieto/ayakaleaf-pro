@@ -117,7 +117,8 @@ entries:
     identifiers: { name: ayakaleaf-saml }
     attrs:
       authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
-      invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+      # End the IdP session too, so the logout test requires fresh credentials.
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-invalidation-flow]]
       acs_url: !Format ["%s/saml/login/callback", !Env E2E_OVERLEAF_URL]
       audience: ayakaleaf
       issuer_override: ayakaleaf-authentik

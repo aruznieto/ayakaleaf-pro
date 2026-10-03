@@ -217,10 +217,14 @@ describe('creating a project from a template', function () {
     visitTemplate(templateId)
     cy.findByRole('heading', { name })
     cy.findByRole('link', { name: 'Admin: Source Project' }).should('not.exist')
+    // Leaving a page while it still loads assets can crash web here: the send
+    // patch's Stream.pipeline throws on Node 24 instead of calling back.
+    cy.wait(2_000)
 
     login(user)
     openAsTemplate(templateId)
     cy.get('.cm-content').should('contain.text', '\\documentclass')
+    cy.wait(2_000)
   })
 })
 
@@ -382,6 +386,92 @@ describe('the gallery', function () {
     cy.findByText('Slide Maker')
     cy.findByRole('link', { name: 'Open as Template' })
     cy.findByRole('link', { name: 'View PDF' })
+  })
+})
+
+describe('gallery pages, sorting and search', function () {
+  // Ten templates sharing a run-unique tag: one more than a page holds (9)
+  const tag = `pg${uuid().slice(0, 6)}`
+  const names = Array.from(
+    { length: 10 },
+    (_, i) => `${tag} ${String(i + 1).padStart(2, '0')}`
+  )
+
+  function entries() {
+    return cy.get('.gallery-container .gallery-thumbnail')
+  }
+
+  function firstTitle() {
+    return entries().first().find('.caption-title')
+  }
+
+  function search(text: string) {
+    cy.findByLabelText('Search…').clear().type(text)
+  }
+
+  before(function () {
+    login(ADMIN_EMAIL)
+    for (const name of names) {
+      createProject(name).then(id => {
+        publishTemplate(id, { name }).its('status').should('equal', 200)
+      })
+    }
+  })
+
+  beforeEach(function () {
+    login(user)
+    cy.visit('/templates/all')
+    search(tag)
+  })
+
+  it('shows nine templates per page and pages through the rest', function () {
+    entries().should('have.length', 9)
+    cy.findByRole('navigation', { name: 'Pagination Navigation' }).within(() => {
+      cy.findByLabelText('Current Page, Page 1')
+      cy.findByRole('button', { name: 'Go to page 2' }).click()
+    })
+    entries().should('have.length', 1)
+    cy.findByLabelText('Current Page, Page 2')
+
+    cy.findByRole('button', { name: 'Go to previous page' }).click()
+    entries().should('have.length', 9)
+    cy.findByLabelText('Current Page, Page 1')
+  })
+
+  it('sorts by title both ways and starts again on page one', function () {
+    cy.findByRole('button', { name: 'Go to page 2' }).click()
+    cy.findByRole('button', { name: 'Sort by Title' }).click()
+    cy.findByLabelText('Current Page, Page 1')
+    firstTitle().should('have.text', names[0])
+
+    cy.findByRole('button', { name: 'Reverse Title sort order' }).click()
+    firstTitle().should('have.text', names[9])
+  })
+
+  it('hides the pagination when one page is enough', function () {
+    search(names[4])
+    entries().should('have.length', 1)
+    firstTitle().should('have.text', names[4])
+    cy.findByRole('navigation', { name: 'Pagination Navigation' }).should(
+      'not.exist'
+    )
+  })
+
+  it('says so when nothing matches', function () {
+    search(`${tag}-nothing-matches`)
+    cy.findByText('No Templates.')
+    entries().should('not.exist')
+  })
+
+  it('returns to the page shown before searching when the search is cleared', function () {
+    cy.findByLabelText('Search…').clear()
+    cy.findByRole('button', { name: 'Go to page 2' }).click()
+    cy.findByLabelText('Current Page, Page 2')
+
+    search(tag)
+    cy.findByLabelText('Current Page, Page 1')
+    cy.findByLabelText('Search…').clear()
+    cy.findByLabelText('Current Page, Page 2')
   })
 })
 

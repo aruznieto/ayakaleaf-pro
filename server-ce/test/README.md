@@ -4,8 +4,9 @@ These tests install Overleaf Pro the same way a user would (with the
 [toolkit](https://github.com/ayaka-notes/toolkit)), then click through it in a
 browser with Cypress.
 
-CI runs them after every ops image build (`.github/workflows/build_ops_image.yml`),
-one suite per runner, against the image that was just pushed.
+CI runs them daily against the latest ops image, one suite per runner
+(`.github/workflows/test_ops_image.yml`). It can also be started by hand with
+another ops tag.
 
 ## How to run
 
@@ -79,4 +80,4 @@ Things that need email (activation mails, password reset) are not tested.
 3. The tests must not rely on other suites, each one runs on its own fresh
    instance. Create users with `ensureUserExists` from `helpers/users.ts`.
 4. `make setup SUITE=<name>`, then `make test_<name>`.
-5. Add `<name>` to the `e2e-test` matrix in `build_ops_image.yml`.
+5. Add `<name>` to the `e2e-test` matrix in `test_ops_image.yml`.

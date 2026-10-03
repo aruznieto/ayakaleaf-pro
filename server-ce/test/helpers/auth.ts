@@ -82,13 +82,20 @@ export function setAuthentikGroup(
   })
 }
 
-// Puts the Admins group back the way blueprint.yaml defines it, in case an
-// earlier run stopped in the middle of changing it.
-export function resetAuthentikGroups() {
+export function setAuthentikName(username: string, name: string) {
+  authentikApi('GET', `core/users/?username=${username}`).then(users => {
+    authentikApi('PATCH', `core/users/${users.body.results[0].pk}/`, { name })
+  })
+}
+
+// Puts the Admins group and alice's name back the way blueprint.yaml defines
+// them, in case an earlier run stopped in the middle of changing them.
+export function resetAuthentikUsers() {
   setAuthentikGroup('alice', 'Admins', true)
   setAuthentikGroup('carol', 'Admins', true)
   setAuthentikGroup('bob', 'Admins', false)
   setAuthentikGroup('dave', 'Admins', false)
+  setAuthentikName('alice', 'Alice Admin')
 }
 
 // Whether the logged in user may open the admin pages.

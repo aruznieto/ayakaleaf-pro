@@ -1,7 +1,7 @@
 import {
   isSiteAdmin,
   ldapLogin,
-  resetAuthentikGroups,
+  resetAuthentikUsers,
   setAuthentikGroup,
 } from '../../../../../helpers/auth'
 
@@ -9,7 +9,7 @@ import {
 // a login must keep whatever admin flag the account has.
 
 before(function () {
-  resetAuthentikGroups()
+  resetAuthentikUsers()
 })
 
 describe('LDAP login without admin mapping', function () {

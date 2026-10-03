@@ -3,8 +3,9 @@ import {
   idpEmail,
   isSiteAdmin,
   ldapLogin,
-  resetAuthentikGroups,
+  resetAuthentikUsers,
   setAuthentikGroup,
+  setAuthentikName,
 } from '../../../../helpers/auth'
 import { postWithCsrf } from '../../../../helpers/request'
 
@@ -13,7 +14,7 @@ import { postWithCsrf } from '../../../../helpers/request'
 // created on /launchpad, which runs on the fresh instance first.
 
 before(function () {
-  resetAuthentikGroups()
+  resetAuthentikUsers()
 })
 
 function loginAs(username: string) {
@@ -46,6 +47,11 @@ describe('launchpad with LDAP', function () {
     loginAs('carol')
     isSiteAdmin().should('equal', true)
     currentUser().its('email').should('equal', idpEmail('carol'))
+  })
+
+  it('does not offer the form once the admin exists', function () {
+    cy.visit('/launchpad')
+    cy.url().should('contain', '/login')
   })
 })
 
@@ -91,5 +97,35 @@ describe('LDAP login', function () {
     // The form has several alerts, only the matching one is shown
     cy.contains('[role="alert"]:visible', 'email or password is incorrect')
     cy.url().should('contain', '/ldap/login')
+  })
+})
+
+describe('LDAP profile and logout', function () {
+  it('updates the name from the directory on every login', function () {
+    // The name attribute is split into first and last name
+    setAuthentikName('alice', 'Alicia Renamed')
+    loginAs('alice')
+    currentUser().then(user => {
+      expect([user.first_name, user.last_name]).to.deep.equal([
+        'Alicia',
+        'Renamed',
+      ])
+    })
+
+    setAuthentikName('alice', 'Alice Admin')
+    loginAs('alice')
+    currentUser().its('first_name').should('equal', 'Alice')
+  })
+
+  it('logs out and requires the password again', function () {
+    loginAs('bob')
+    cy.visit('/logout')
+    cy.findByRole('button', { name: /^Log Out$/ }).click()
+    cy.url().should('not.contain', '/logout')
+
+    cy.visit('/project')
+    cy.url().should('contain', '/login')
+    loginAs('bob')
+    currentUser().its('email').should('equal', idpEmail('bob'))
   })
 })

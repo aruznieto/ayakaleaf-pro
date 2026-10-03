@@ -4,8 +4,9 @@ import {
   currentUser,
   idpEmail,
   isSiteAdmin,
-  resetAuthentikGroups,
+  resetAuthentikUsers,
   setAuthentikGroup,
+  setAuthentikName,
   ssoLogin,
 } from '../../../../helpers/auth'
 import { login } from '../../../../helpers/login'
@@ -16,7 +17,7 @@ import { postWithCsrf } from '../../../../helpers/request'
 // local form, the first admin gets a local password and keeps it.
 
 before(function () {
-  resetAuthentikGroups()
+  resetAuthentikUsers()
 })
 
 const carolPassword = `Local-${Cypress._.random(1e9)}-Pass`
@@ -75,6 +76,17 @@ describe('OIDC login', function () {
     setAuthentikGroup('alice', 'Admins', true)
     oidcLogin('alice')
     isSiteAdmin().should('equal', true)
+  })
+
+  it('updates the name from the IdP on every login', function () {
+    // authentik sends the full name as given_name and no family_name
+    setAuthentikName('alice', 'Alicia Renamed')
+    oidcLogin('alice')
+    currentUser().its('first_name').should('equal', 'Alicia Renamed')
+
+    setAuthentikName('alice', 'Alice Admin')
+    oidcLogin('alice')
+    currentUser().its('first_name').should('equal', 'Alice Admin')
   })
 })
 

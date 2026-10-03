@@ -4,6 +4,8 @@ import { postWithCsrf } from './request'
 
 // The template pages and APIs share a limit of 60 requests per minute.
 export const waitForTemplateSlot = createRateLimitWaiter(50, 60_000)
+// Publishing is limited to 20 a minute.
+const waitForPublishSlot = createRateLimitWaiter(18, 60_000)
 
 export type TemplateFields = {
   name: string
@@ -18,8 +20,9 @@ export type TemplateFields = {
 // Publishes a project through the endpoint of the "Manage Template" modal,
 // after compiling it unless a build is given. Yields the response.
 export function publishTemplate(projectId: string, fields: TemplateFields) {
-  const post = (build: string) =>
-    postWithCsrf(`/template/new/${projectId}`, {
+  const post = (build: string) => {
+    waitForPublishSlot()
+    return postWithCsrf(`/template/new/${projectId}`, {
       category: '/templates/academic-journal',
       license: 'cc_by_4.0',
       authorMD: 'Test Author',
@@ -28,6 +31,7 @@ export function publishTemplate(projectId: string, fields: TemplateFields) {
       build,
       ...fields,
     })
+  }
   if (fields.build) return post(fields.build)
   return compileProject(projectId).then(build => post(build))
 }

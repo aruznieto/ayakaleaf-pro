@@ -39,6 +39,7 @@ jobs:
             sandboxed-compiles,
             symbol-palette,
             template-gallery,
+            git-bridge,
             authentication/ldap,
             authentication/saml,
             authentication/oidc

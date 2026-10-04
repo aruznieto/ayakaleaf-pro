@@ -62,6 +62,12 @@ One folder per module in `toolkit/suites/`, named and nested like
   links in the header, the welcome message and the editor's Help menu.
   Pages come from the public Overleaf wiki, so this suite needs internet
   access and starts slower.
+- `python-runner/` – running `.py` files with the self-hosted Pyodide: output
+  and the last value, stderr, Python and syntax errors, packages that are not
+  built in, built-in packages from the instance, reading project files,
+  unsaved edits, the 100-line output cap, stopping a script, an output per
+  script, saving written and binary files, overwriting, the 50-file limit,
+  and viewers.
 - `reference-picker/` – the advanced reference search over the project's
   `.bib` files: the hint inside `\cite{}`, opening it with the hint and
   Ctrl+Space, searching every field, inserting, adding to and replacing cite

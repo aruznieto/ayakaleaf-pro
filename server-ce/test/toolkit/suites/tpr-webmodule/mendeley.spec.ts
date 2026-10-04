@@ -6,12 +6,14 @@ import {
 } from '../../../helpers/project'
 import {
   bibEntry,
+  clickRefresh,
   countEntries,
   expectReferencesSearchable,
   importFromProvider,
   linkedFileContent,
   linkReferenceManager,
   openImportFromProvider,
+  refreshLinkedFile,
   referenceWidget,
   resetReferenceManagerLink,
   setGroups,
@@ -41,10 +43,6 @@ function tokenRequests() {
 // Tokens that expire within a minute are refreshed before every request
 function issueShortLivedTokens() {
   tprMock('PUT', '/mendeley/expires-in', { seconds: 30 })
-}
-
-function refresh() {
-  cy.findByRole('button', { name: 'Refresh' }).click()
 }
 
 function expectFileError(message: string) {
@@ -202,7 +200,7 @@ describe('importing from Mendeley', function () {
     setLibrary('mendeley', [bibEntry('before')])
     importFromProvider('mendeley').then(name => {
       setLibrary('mendeley', [bibEntry('after')])
-      refresh()
+      refreshLinkedFile(name)
       linkedFileContent(projectId, name).should(bibtex => {
         expect(bibtex).to.contain('@article{after,')
         expect(bibtex).not.to.contain('@article{before,')
@@ -237,7 +235,7 @@ describe('importing from Mendeley', function () {
     setLibrary('mendeley', [bibEntry('expiring')])
     importFromProvider('mendeley').then(() => {
       tprMock('POST', '/mendeley/tokens/revoke')
-      refresh()
+      clickRefresh()
       expectFileError(
         'Could not load references from Mendeley, please re-link your account and try again'
       )
@@ -254,7 +252,7 @@ describe('importing from Mendeley', function () {
     setLibrary('mendeley', [bibEntry('revoked')])
     importFromProvider('mendeley').then(() => {
       tprMock('POST', '/mendeley/tokens/revoke')
-      refresh()
+      clickRefresh()
       expectFileError(
         'Could not load references from Mendeley, please re-link your account and try again'
       )
@@ -268,7 +266,7 @@ describe('importing from Mendeley', function () {
       resetReferenceManagerLink('mendeley')
       openProject(projectId)
       cy.findByRole('treeitem', { name }).click()
-      refresh()
+      clickRefresh()
       expectFileError(
         'Could not load references from Mendeley, please re-link your account and try again'
       )
@@ -321,7 +319,7 @@ describe('importing from Mendeley', function () {
     setLibrary('mendeley', [bibEntry('flaky')])
     importFromProvider('mendeley').then(name => {
       tprMock('POST', '/mendeley/fail-next', { status: 500 })
-      refresh()
+      clickRefresh()
       cy.get('.file-view-error').should('be.visible')
       // The file keeps its last content
       linkedFileContent(projectId, name).should('contain', '@article{flaky,')

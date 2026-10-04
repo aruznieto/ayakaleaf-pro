@@ -106,6 +106,24 @@ export function importFromProvider(
   return cy.wrap(fileName)
 }
 
+export function clickRefresh() {
+  cy.findByRole('button', { name: 'Refresh' }).click()
+}
+
+// A successful refresh replaces the file with a new one; waits for it, so
+// that its content can be read
+export function refreshLinkedFile(name: string) {
+  cy.findByRole('treeitem', { name })
+    .find('[data-file-id]')
+    .invoke('attr', 'data-file-id')
+    .then(oldId => {
+      clickRefresh()
+      cy.findByRole('treeitem', { name })
+        .find('[data-file-id]')
+        .should('not.have.attr', 'data-file-id', oldId)
+    })
+}
+
 // A linked file is a binary file; its content comes from the file endpoint
 export function linkedFileContent(projectId: string, name: string) {
   return cy

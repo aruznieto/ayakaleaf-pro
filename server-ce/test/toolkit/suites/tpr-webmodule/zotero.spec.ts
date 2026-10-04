@@ -6,12 +6,14 @@ import {
 } from '../../../helpers/project'
 import {
   bibEntry,
+  clickRefresh,
   countEntries,
   expectReferencesSearchable,
   importFromProvider,
   linkedFileContent,
   linkReferenceManager,
   openImportFromProvider,
+  refreshLinkedFile,
   referenceWidget,
   resetReferenceManagerLink,
   setGroups,
@@ -42,10 +44,6 @@ const attachments = [
 
 function zoteroKeys() {
   return tprMock('GET', '/zotero/keys').its('body')
-}
-
-function refresh() {
-  cy.findByRole('button', { name: 'Refresh' }).click()
 }
 
 function expectFileError(message: string) {
@@ -216,7 +214,7 @@ describe('importing from Zotero', function () {
     setLibrary('zotero', [bibEntry('before')])
     importFromProvider('zotero').then(name => {
       setLibrary('zotero', [bibEntry('after')])
-      refresh()
+      refreshLinkedFile(name)
       linkedFileContent(projectId, name).should(bibtex => {
         expect(bibtex).to.contain('@article{after,')
         expect(bibtex).not.to.contain('@article{before,')
@@ -273,7 +271,7 @@ describe('importing from Zotero', function () {
     setLibrary('zotero', [bibEntry('revoked')])
     importFromProvider('zotero').then(() => {
       tprMock('POST', '/zotero/keys/revoke')
-      refresh()
+      clickRefresh()
       expectFileError(
         'Could not load references from Zotero, please re-link your account and try again'
       )
@@ -291,7 +289,7 @@ describe('importing from Zotero', function () {
       resetReferenceManagerLink('zotero')
       openProject(projectId)
       cy.findByRole('treeitem', { name }).click()
-      refresh()
+      clickRefresh()
       expectFileError(
         'Could not load references from Zotero, please re-link your account and try again'
       )
@@ -302,7 +300,7 @@ describe('importing from Zotero', function () {
     setLibrary('zotero', [bibEntry('flaky')])
     importFromProvider('zotero').then(name => {
       tprMock('POST', '/zotero/fail-next', { status: 500 })
-      refresh()
+      clickRefresh()
       cy.get('.file-view-error').should('be.visible')
       // The file keeps its last content
       linkedFileContent(projectId, name).should('contain', '@article{flaky,')

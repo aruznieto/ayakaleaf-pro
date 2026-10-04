@@ -48,6 +48,7 @@ jobs:
             reference-picker,
             github-sync,
             tpr-webmodule,
+            python-runner,
             authentication/ldap,
             authentication/saml,
             authentication/oidc

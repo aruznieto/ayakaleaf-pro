@@ -31,6 +31,8 @@ jobs:
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
+      # Every suite runs a whole Overleaf, keep the number of runners bounded
+      max-parallel: 8
       matrix:
         suite:
           [
@@ -40,6 +42,8 @@ jobs:
             symbol-palette,
             template-gallery,
             git-bridge,
+            track-changes,
+            open-in-overleaf,
             authentication/ldap,
             authentication/saml,
             authentication/oidc

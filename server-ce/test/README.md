@@ -39,8 +39,23 @@ One folder per module in `toolkit/suites/`, named and nested like
   one email domain.
 - `sandboxed-compiles/` – compiling in sibling containers, switching between
   two TeX Live images, XeLaTeX, errors, stopping a compile, SyncTeX.
-- `symbol-palette/` – searching by command, description and character,
-  empty search results, clicking symbols to insert them at the editor cursor.
+- `symbol-palette/` – opening and closing the palette, switching categories
+  by click and keyboard, searching by command, description and character,
+  empty search results, inserting symbols by click and keyboard at the editor
+  cursor, the tooltip.
+- `track-changes/` – editing, reviewing and viewing modes, tracked insertions
+  and deletions, accepting and rejecting them, comments (reply, edit, delete,
+  resolve, re-open), and which routes owners, editors, reviewers, viewers,
+  link viewers and other users may call.
+- `git-bridge/` – git tokens in the settings, cloning, pushing and pulling
+  with the git CLI: binary files, folders, renames, deletes, out-of-date
+  pushes, and access for invited and link-shared editors, reviewers and
+  viewers.
+- `open-in-overleaf/` – the `/docs` endpoint: snippets, encoded snippets,
+  data URLs with names, main document and engine, zips, refused and internal
+  URLs, the login for signed-out visitors, and the `/devs` page. The
+  `public-access/` variant tests `/devs` and parking a signed-out post until
+  the login with `OVERLEAF_ALLOW_PUBLIC_ACCESS=true`.
 - `template-gallery/` – publishing a project as a template, the gallery
   (categories, search, sort, pages), editing, overwriting and deleting
   templates, creating projects from them, permissions.

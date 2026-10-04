@@ -3,8 +3,8 @@ import {
   createGitToken,
   git,
   gitClone,
+  gitCommitAllAndPush,
   gitCommitAndPush,
-  shareProject,
   workingCopy,
 } from '../../../helpers/git'
 import { login } from '../../../helpers/login'
@@ -14,6 +14,7 @@ import {
   projectName,
 } from '../../../helpers/project'
 import { requestWithCsrf } from '../../../helpers/request'
+import { shareProject, shareProjectByLink } from '../../../helpers/sharing'
 import { ensureUserExists } from '../../../helpers/users'
 
 // git-bridge module with the git-bridge container of the toolkit, built from
@@ -23,6 +24,9 @@ import { ensureUserExists } from '../../../helpers/users'
 const owner = `owner-${uuid()}@example.com`
 const editor = `editor-${uuid()}@example.com`
 const viewer = `viewer-${uuid()}@example.com`
+const reviewer = `reviewer-${uuid()}@example.com`
+const linkEditor = `link-editor-${uuid()}@example.com`
+const linkViewer = `link-viewer-${uuid()}@example.com`
 const stranger = `stranger-${uuid()}@example.com`
 
 const MAIN_TEX = [
@@ -35,24 +39,43 @@ const MAIN_TEX = [
 ].join('\n')
 
 before(function () {
-  for (const email of [owner, editor, viewer, stranger]) {
+  for (const email of [
+    owner,
+    editor,
+    viewer,
+    reviewer,
+    linkEditor,
+    linkViewer,
+    stranger,
+  ]) {
     ensureUserExists(email)
   }
 })
+
+type Entity = { path: string; type: 'doc' | 'file' }
+
+function projectEntities(projectId: string): Cypress.Chainable<Entity[]> {
+  return cy.request(`/project/${projectId}/entities`).its('body.entities')
+}
 
 describe('git tokens in the account settings', function () {
   it('generates, lists and deletes a token', function () {
     login(owner)
     cy.visit('/user/settings')
     cy.findByRole('heading', { name: 'Git integration' })
-    cy.findByRole('button', { name: /Generate token|Add another token/ }).click()
+    cy.findByRole('button', {
+      name: /Generate token|Add another token/,
+    }).click()
     cy.findByRole('dialog')
       .contains(/olp_[a-zA-Z0-9]+/)
       .invoke('text')
       .then(text => {
         const token = text.match(/olp_[a-zA-Z0-9]+/)![0]
         // The header close button is called Close too, use the footer one
-        cy.findByRole('dialog').findAllByRole('button', { name: 'Close' }).last().click()
+        cy.findByRole('dialog')
+          .findAllByRole('button', { name: 'Close' })
+          .last()
+          .click()
         // Only the start of the token is shown afterwards
         cy.contains(`${token.slice(0, 8)}************`)
       })
@@ -75,9 +98,15 @@ describe('git access to a project', function () {
       projectId = id
     })
     cy.then(() => {
-      shareProject(projectId, editor, 'readAndWrite', () => login(editor))
+      shareProject(projectId, editor, 'readAndWrite')
       login(owner)
-      shareProject(projectId, viewer, 'readOnly', () => login(viewer))
+      shareProject(projectId, viewer, 'readOnly')
+      login(owner)
+      shareProject(projectId, reviewer, 'review')
+      login(owner)
+      shareProjectByLink(projectId, linkEditor, 'readAndWrite')
+      login(owner)
+      shareProjectByLink(projectId, linkViewer, 'readOnly')
     })
   })
 
@@ -129,9 +158,10 @@ describe('git access to a project', function () {
         .its('exitCode')
         .should('equal', 0)
     })
-    cy.request(`/project/${projectId}/entities`)
-      .its('body.entities')
-      .should('deep.include', { path: '/from-git.tex', type: 'doc' })
+    projectEntities(projectId).should('deep.include', {
+      path: '/from-git.tex',
+      type: 'doc',
+    })
   })
 
   it('pulls a change made in Overleaf', function () {
@@ -161,29 +191,156 @@ describe('git access to a project', function () {
     pullUntilChanged()
   })
 
-  it('lets a collaborator with edit access push', function () {
-    login(editor)
-    const dir = workingCopy('editor')
+  it('keeps binary files and folders when pushing and cloning', function () {
+    login(owner)
+    const dir = workingCopy('binary')
+    const clone = workingCopy('binary-clone')
     createGitToken().then(token => {
-      gitClone(projectId, token, dir).its('exitCode').should('equal', 0)
-      gitCommitAndPush(dir, 'from-editor.tex', 'By the editor', 'Editor change')
+      gitClone(projectId, token, dir)
+      git(
+        `cd ${dir} && mkdir -p figures chapters && ` +
+          'head -c 4096 /dev/urandom > figures/plot.png && ' +
+          "printf '%s' 'In a folder' > chapters/intro.tex"
+      )
+      gitCommitAllAndPush(dir, 'Add a figure and a chapter')
         .its('exitCode')
         .should('equal', 0)
+
+      projectEntities(projectId).should(entities => {
+        expect(entities).to.deep.include({
+          path: '/figures/plot.png',
+          type: 'file',
+        })
+        expect(entities).to.deep.include({
+          path: '/chapters/intro.tex',
+          type: 'doc',
+        })
+      })
+
+      // A fresh clone gets the figure back byte for byte
+      gitClone(projectId, token, clone).its('exitCode').should('equal', 0)
+      git(`cd ${dir} && sha1sum figures/plot.png`).then(original => {
+        git(`cd ${clone} && sha1sum figures/plot.png`)
+          .its('stdout')
+          .should('equal', original.stdout)
+      })
+      git(`cat ${clone}/chapters/intro.tex`)
+        .its('stdout')
+        .should('equal', 'In a folder')
     })
   })
 
-  it('lets a read-only collaborator clone but not push', function () {
-    login(viewer)
-    const dir = workingCopy('viewer')
+  it('renames and deletes files pushed through git', function () {
+    login(owner)
+    const dir = workingCopy('rename')
     createGitToken().then(token => {
-      gitClone(projectId, token, dir).its('exitCode').should('equal', 0)
-      gitCommitAndPush(dir, 'from-viewer.tex', 'By the viewer', 'Viewer change')
-        .then(result => {
-          expect(result.exitCode).not.to.equal(0)
-          expect(result.stderr).to.match(/forbidden|403|not allowed/i)
+      gitClone(projectId, token, dir)
+      git(
+        `cd ${dir} && printf '%s' 'Renamed through git' > old-name.tex && ` +
+          "printf '%s' 'Deleted through git' > obsolete.tex"
+      )
+      gitCommitAllAndPush(dir, 'Add two files')
+        .its('exitCode')
+        .should('equal', 0)
+      projectEntities(projectId).should(entities => {
+        expect(entities).to.deep.include({
+          path: '/old-name.tex',
+          type: 'doc',
         })
+        expect(entities).to.deep.include({
+          path: '/obsolete.tex',
+          type: 'doc',
+        })
+      })
+
+      git(
+        `cd ${dir} && mkdir -p moved && git mv old-name.tex moved/new-name.tex && ` +
+          'git rm -q obsolete.tex'
+      )
+      gitCommitAllAndPush(dir, 'Rename and delete')
+        .its('exitCode')
+        .should('equal', 0)
+    })
+
+    projectEntities(projectId).should(entities => {
+      const paths = entities.map(entity => entity.path)
+      expect(paths).to.include('/moved/new-name.tex')
+      expect(paths).not.to.include('/old-name.tex')
+      expect(paths).not.to.include('/obsolete.tex')
+    })
+    openProject(projectId)
+    cy.findByRole('treeitem', { name: 'moved' }).click()
+    cy.findByRole('treeitem', { name: 'new-name.tex' }).click()
+    cy.get('.cm-content').should('contain.text', 'Renamed through git')
+  })
+
+  it('rejects a push from an out-of-date clone until it pulls', function () {
+    login(owner)
+    const first = workingCopy('first')
+    const second = workingCopy('second')
+    createGitToken().then(token => {
+      gitClone(projectId, token, first)
+      gitClone(projectId, token, second)
+    })
+    gitCommitAndPush(first, 'first.tex', 'First clone', 'First clone')
+      .its('exitCode')
+      .should('equal', 0)
+
+    gitCommitAndPush(second, 'second.tex', 'Second clone', 'Second clone').then(
+      result => {
+        expect(result.exitCode).not.to.equal(0)
+        expect(result.stderr).to.match(/rejected/)
+      }
+    )
+    git(
+      `cd ${second} && ` +
+        'git -c user.name=e2e -c user.email=e2e@example.com pull -q --rebase && ' +
+        'git push'
+    )
+      .its('exitCode')
+      .should('equal', 0)
+
+    projectEntities(projectId).should(entities => {
+      expect(entities).to.deep.include({ path: '/first.tex', type: 'doc' })
+      expect(entities).to.deep.include({ path: '/second.tex', type: 'doc' })
     })
   })
+
+  for (const { role, email } of [
+    { role: 'an invited editor', email: () => editor },
+    { role: 'an editor through the link', email: () => linkEditor },
+  ]) {
+    it(`lets ${role} clone and push`, function () {
+      login(email())
+      const dir = workingCopy('can-push')
+      createGitToken().then(token => {
+        gitClone(projectId, token, dir).its('exitCode').should('equal', 0)
+        gitCommitAndPush(dir, `push-${Date.now()}.tex`, 'Pushed', 'Push')
+          .its('exitCode')
+          .should('equal', 0)
+      })
+    })
+  }
+
+  for (const { role, email } of [
+    { role: 'an invited viewer', email: () => viewer },
+    { role: 'a reviewer', email: () => reviewer },
+    { role: 'a viewer through the link', email: () => linkViewer },
+  ]) {
+    it(`lets ${role} clone but not push`, function () {
+      login(email())
+      const dir = workingCopy('cannot-push')
+      createGitToken().then(token => {
+        gitClone(projectId, token, dir).its('exitCode').should('equal', 0)
+        gitCommitAndPush(dir, 'not-pushed.tex', 'Not pushed', 'Push').then(
+          result => {
+            expect(result.exitCode).not.to.equal(0)
+            expect(result.stderr).to.match(/forbidden|403|not allowed/i)
+          }
+        )
+      })
+    })
+  }
 
   it('refuses a user without access to the project', function () {
     login(stranger)
@@ -207,7 +364,10 @@ describe('git access to a project', function () {
             token.startsWith(t.accessTokenPartial)
         )
         cy.visit('/user/settings')
-        requestWithCsrf('DELETE', `/oauth/personal-access-tokens/${created._id}`)
+        requestWithCsrf(
+          'DELETE',
+          `/oauth/personal-access-tokens/${created._id}`
+        )
           .its('status')
           .should('be.lessThan', 400)
       })

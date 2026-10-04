@@ -112,6 +112,10 @@ function MendeleyCreateFilePane() {
         name,
         provider: 'mendeley',
         data,
+      }).then(result => {
+        // Reindex the references here and, through the broadcast, for the
+        // collaborators; undefined when creating the file failed
+        if (result) window.dispatchEvent(new CustomEvent('reference:added'))
       })
     },
     [

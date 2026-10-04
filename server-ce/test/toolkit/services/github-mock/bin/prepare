@@ -11,28 +11,20 @@
 
 set -euo pipefail
 
-apply_config="$(cd "$(dirname "$0")/../../.." && pwd)/bin/apply-config"
+services="$(cd "$(dirname "$0")/../.." && pwd)"
 state="$TOOLKIT_DIR/services/github-mock"
-mkdir -p "$state" "$TOOLKIT_DIR/data/overleaf/certs"
-cd "$state"
 
-openssl req -x509 -newkey rsa:2048 -nodes -days 30 -subj "/CN=e2e-github-mock-ca" \
-  -keyout ca.key -out ca.crt 2>/dev/null
-openssl req -newkey rsa:2048 -nodes -subj "/CN=github.com" \
-  -keyout tls.key -out tls.csr 2>/dev/null
-openssl x509 -req -in tls.csr -CA ca.crt -CAkey ca.key -CAcreateserial -days 30 \
-  -extfile <(printf 'subjectAltName=DNS:github.com,DNS:api.github.com\nbasicConstraints=CA:FALSE\n') \
-  -out tls.crt 2>/dev/null
-chmod 644 tls.key tls.crt
-cp ca.crt "$TOOLKIT_DIR/data/overleaf/certs/github-mock-ca.pem"
+"$services/lib/make-tls" "$state" github.com api.github.com
+mkdir -p "$TOOLKIT_DIR/data/overleaf/certs"
+cp "$state/ca.crt" "$TOOLKIT_DIR/data/overleaf/certs/github-mock-ca.pem"
 
 client_secret=$(openssl rand -hex 20)
-cat >mock.env <<ENV
+cat >"$state/mock.env" <<ENV
 GITHUB_MOCK_CLIENT_ID=e2e-github-client
 GITHUB_MOCK_CLIENT_SECRET=$client_secret
 ENV
 
-"$apply_config" "$TOOLKIT_DIR/config/variables.env" <(cat <<ENV
+"$services/../bin/apply-config" "$TOOLKIT_DIR/config/variables.env" <(cat <<ENV
 GITHUB_SYNC_CLIENT_ID=e2e-github-client
 GITHUB_SYNC_CLIENT_SECRET=$client_secret
 GITHUB_TOKEN_CIPHER_PASSWORD=$(openssl rand -hex 24)

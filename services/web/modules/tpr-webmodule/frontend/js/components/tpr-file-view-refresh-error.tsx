@@ -47,7 +47,14 @@ export function TPRFileViewRefreshError({
         provider.id === 'zotero'
           ? t('zotero_reference_loading_error_forbidden')
           : t('mendeley_reference_loading_error_forbidden')
-    } else if (refreshError === 'forbidden' || refreshError?.includes('403')) {
+    } else if (
+      refreshError === 'forbidden' ||
+      refreshError?.includes('403') ||
+      // Core answers every AccessDeniedError with this text; for a reference
+      // manager it means the stored credentials no longer work
+      refreshError ===
+        t('the_project_that_contains_this_file_is_not_shared_with_you')
+    ) {
       message =
         provider.id === 'zotero'
           ? t('zotero_reference_loading_error_forbidden')

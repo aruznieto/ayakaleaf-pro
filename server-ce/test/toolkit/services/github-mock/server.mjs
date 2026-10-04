@@ -13,14 +13,11 @@
 // authorization.
 
 import crypto from 'node:crypto'
-import fs from 'node:fs'
-import http from 'node:http'
-import https from 'node:https'
 import zlib from 'node:zlib'
+import { HttpError, listen, send } from './lib/mock-server.mjs'
 
 const CLIENT_ID = process.env.GITHUB_MOCK_CLIENT_ID
 const CLIENT_SECRET = process.env.GITHUB_MOCK_CLIENT_SECRET
-const TLS_DIR = process.env.GITHUB_MOCK_TLS_DIR || '/tls'
 
 const USER = { id: 4242, login: 'e2e-octocat', name: 'E2E Octocat' }
 const ORG = 'e2e-org'
@@ -268,39 +265,7 @@ function commitJson(sha) {
   }
 }
 
-// ---------------------------------------------------------------- plumbing
-
-class HttpError extends Error {
-  constructor(status, message, extra = {}) {
-    super(message)
-    this.status = status
-    this.extra = extra
-  }
-}
-
-function send(res, status, body, headers = {}) {
-  if (Buffer.isBuffer(body)) {
-    res.writeHead(status, headers)
-    res.end(body)
-  } else if (body === undefined) {
-    res.writeHead(status, headers)
-    res.end()
-  } else {
-    res.writeHead(status, { 'Content-Type': 'application/json', ...headers })
-    res.end(JSON.stringify(body))
-  }
-}
-
-async function readBody(req) {
-  const chunks = []
-  for await (const chunk of req) chunks.push(chunk)
-  const raw = Buffer.concat(chunks).toString('utf8')
-  if (!raw) return {}
-  if ((req.headers['content-type'] || '').includes('json')) {
-    return JSON.parse(raw)
-  }
-  return Object.fromEntries(new URLSearchParams(raw))
-}
+// ----------------------------------------------------------------- access
 
 function requireToken(req) {
   const match = /^(?:Bearer|token) (.+)$/.exec(req.headers.authorization || '')
@@ -319,39 +284,6 @@ function repoFor(req, owner, name) {
 function requirePush(repo) {
   if (!repo.push)
     throw new HttpError(403, 'Resource not accessible by integration')
-}
-
-function route(routes, method, pathname) {
-  for (const [m, pattern, handler] of routes) {
-    if (m !== method) continue
-    const match = pattern.exec(pathname)
-    if (match) {
-      // Optional groups that did not match stay undefined
-      const params = match.slice(1).map(p => p && decodeURIComponent(p))
-      return { handler, params }
-    }
-  }
-  return null
-}
-
-function serve(routes) {
-  return async (req, res) => {
-    const url = new URL(req.url, `https://${req.headers.host}`)
-    try {
-      const found = route(routes, req.method, url.pathname)
-      if (!found) throw new HttpError(404, 'Not Found')
-      const body = ['POST', 'PATCH', 'PUT', 'DELETE'].includes(req.method)
-        ? await readBody(req)
-        : {}
-      await found.handler({ req, res, url, body, params: found.params })
-    } catch (err) {
-      if (!(err instanceof HttpError)) {
-        console.error(err)
-        err = new HttpError(500, err.message)
-      }
-      send(res, err.status, { message: err.message, ...err.extra })
-    }
-  }
 }
 
 // ------------------------------------------------------------------ github
@@ -847,14 +779,4 @@ const control = [
   ],
 ]
 
-https
-  .createServer(
-    {
-      key: fs.readFileSync(`${TLS_DIR}/tls.key`),
-      cert: fs.readFileSync(`${TLS_DIR}/tls.crt`),
-    },
-    serve(github)
-  )
-  .listen(443)
-http.createServer(serve(control)).listen(8080)
-console.log('github mock listening on 443 (GitHub) and 8080 (control)')
+listen({ name: 'github mock', routes: github, control })

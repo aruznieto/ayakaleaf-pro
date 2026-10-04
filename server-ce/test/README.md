@@ -73,6 +73,12 @@ One folder per module in `toolkit/suites/`, named and nested like
   pushing, merging, conflicts and the manual merge, renames and deletes,
   binary files, force pushes, lost push access, and what collaborators may
   do. Git-bridge is on as the docs require.
+- `tpr-webmodule/` – Zotero and Mendeley against `toolkit/services/tpr-mock`:
+  linking and unlinking through OAuth 1.0a (Zotero, with its signatures
+  checked) and OAuth 2.0 (Mendeley), cancelled and refused links, forged
+  callbacks, importing a library or a group from every page, refreshing,
+  the reference search, Mendeley's token refresh, revoked keys and tokens,
+  API errors, and what editors and viewers may do.
 - `template-gallery/` – publishing a project as a template, the gallery
   (categories, search, sort, pages), editing, overwriting and deleting
   templates, creating projects from them, permissions.
@@ -99,8 +105,10 @@ Things that need email (activation mails, password reset) are not tested.
 - `helpers/` – small functions shared by tests, like logging in or creating
   a user or a project.
 - `toolkit/services/` – extra containers a suite needs, e.g. `authentik/`, or
-  `github-mock/`, which answers as github.com and api.github.com on the
-  toolkit's network with a throwaway CA that Overleaf is told to trust.
+  the mocks of external services: `github-mock/` answers as github.com and
+  api.github.com, `tpr-mock/` as Zotero and Mendeley, on the toolkit's network
+  with a throwaway CA that Overleaf is told to trust. `lib/` holds what the
+  mocks share: the server plumbing, `make-tls` and `start-mock`.
   A suite lists them in its `services` file. `make setup` starts them next to
   Overleaf on the toolkit's network, `make clean` removes them. Their secrets
   are generated on every setup, none are stored in the repository.

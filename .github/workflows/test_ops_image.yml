@@ -47,6 +47,7 @@ jobs:
             learn,
             reference-picker,
             github-sync,
+            tpr-webmodule,
             authentication/ldap,
             authentication/saml,
             authentication/oidc

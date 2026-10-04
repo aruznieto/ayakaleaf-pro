@@ -46,6 +46,7 @@ jobs:
             open-in-overleaf,
             learn,
             reference-picker,
+            github-sync,
             authentication/ldap,
             authentication/saml,
             authentication/oidc

@@ -67,6 +67,12 @@ One folder per module in `toolkit/suites/`, named and nested like
   Ctrl+Space, searching every field, inserting, adding to and replacing cite
   keys, removing tags, the keyboard, cancelling, and the usual autocomplete
   outside a cite argument.
+- `github-sync/` – GitHub Sync against `toolkit/services/github-mock`: linking
+  and unlinking the GitHub account through the OAuth app, exporting a project
+  into a new repository, importing a repository, unlinking a project, pulling,
+  pushing, merging, conflicts and the manual merge, renames and deletes,
+  binary files, force pushes, lost push access, and what collaborators may
+  do. Git-bridge is on as the docs require.
 - `template-gallery/` – publishing a project as a template, the gallery
   (categories, search, sort, pages), editing, overwriting and deleting
   templates, creating projects from them, permissions.
@@ -92,7 +98,9 @@ Things that need email (activation mails, password reset) are not tested.
   applies them, restarts Overleaf and runs the variant after the main specs.
 - `helpers/` – small functions shared by tests, like logging in or creating
   a user or a project.
-- `toolkit/services/` – extra containers a suite needs, e.g. `authentik/`.
+- `toolkit/services/` – extra containers a suite needs, e.g. `authentik/`, or
+  `github-mock/`, which answers as github.com and api.github.com on the
+  toolkit's network with a throwaway CA that Overleaf is told to trust.
   A suite lists them in its `services` file. `make setup` starts them next to
   Overleaf on the toolkit's network, `make clean` removes them. Their secrets
   are generated on every setup, none are stored in the repository.

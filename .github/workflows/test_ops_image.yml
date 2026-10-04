@@ -44,6 +44,8 @@ jobs:
             git-bridge,
             track-changes,
             open-in-overleaf,
+            learn,
+            reference-picker,
             authentication/ldap,
             authentication/saml,
             authentication/oidc

@@ -56,6 +56,17 @@ One folder per module in `toolkit/suites/`, named and nested like
   URLs, the login for signed-out visitors, and the `/devs` page. The
   `public-access/` variant tests `/devs` and parking a signed-out post until
   the login with `OVERLEAF_ALLOW_PUBLIC_ACCESS=true`.
+- `learn/` – the wiki proxy under `/learn`: the home page and its contents
+  sidebar, LaTeX and how-to pages, links and images in pages, redirects,
+  missing pages, the login for signed-out visitors, and the Documentation
+  links in the header, the welcome message and the editor's Help menu.
+  Pages come from the public Overleaf wiki, so this suite needs internet
+  access and starts slower.
+- `reference-picker/` – the advanced reference search over the project's
+  `.bib` files: the hint inside `\cite{}`, opening it with the hint and
+  Ctrl+Space, searching every field, inserting, adding to and replacing cite
+  keys, removing tags, the keyboard, cancelling, and the usual autocomplete
+  outside a cite argument.
 - `template-gallery/` – publishing a project as a template, the gallery
   (categories, search, sort, pages), editing, overwriting and deleting
   templates, creating projects from them, permissions.

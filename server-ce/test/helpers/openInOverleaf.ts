@@ -27,3 +27,22 @@ export function submitDocs(params: Params, method: 'GET' | 'POST' = 'POST') {
     followRedirect: false,
   })
 }
+
+// Submits and returns the id of the project it redirects to
+export function openInOverleaf(
+  params: Params,
+  method: 'GET' | 'POST' = 'POST'
+): Cypress.Chainable<string> {
+  return submitDocs(params, method).then(response => {
+    expect(response.status).to.equal(302)
+    const match = /^\/project\/([0-9a-f]{24})$/.exec(
+      response.redirectedToUrl!.replace(Cypress.config('baseUrl')!, '')
+    )
+    expect(match, response.redirectedToUrl).to.not.equal(null)
+    return match![1]
+  })
+}
+
+export function dataUrl(mime: string, content: string) {
+  return `data:${mime};base64,${btoa(content)}`
+}

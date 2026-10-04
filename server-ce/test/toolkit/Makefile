@@ -24,7 +24,8 @@ OVERLEAF_IMAGE ?= ghcr.io/ayaka-notes/overleaf-pro/ops:latest
 OVERLEAF_IMAGE_NAME := $(shell sed -n 's/^OVERLEAF_IMAGE_NAME=//p' config/overleaf.rc)
 
 CYPRESS_IMAGE ?= overleaf-pro-e2e-cypress
-STARTUP_TIMEOUT ?= 300
+# The learn suite caches the whole wiki before the web service starts
+STARTUP_TIMEOUT ?= 600
 
 SUITE ?=
 # Extra services a suite needs, listed in suites/<suite>/services

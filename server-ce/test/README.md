@@ -85,6 +85,24 @@ One folder per module in `toolkit/suites/`, named and nested like
   callbacks, importing a library or a group from every page, refreshing,
   the reference search, Mendeley's token refresh, revoked keys and tokens,
   API errors, and what editors and viewers may do.
+- `workbench/` – the AI assistant against `toolkit/services/ai-mock`:
+  answers with the instance's model and the editor context, reasoning,
+  browser tools and their results, approving, rejecting and undoing edits,
+  edits whose text changed, web search through Tavily, documentation search
+  through MCP, images and the image model, the tool call limit, gateway
+  errors, the consent prompt, the token quota and its reset by an admin, AI
+  turned off for a user, and the chat endpoint's checks. The `disabled/`
+  variant runs with `AI_ENABLED=false`.
+- `error-assistant/` – Suggest fix on compile errors against
+  `toolkit/services/ai-mock`: the prompt with the error and the source,
+  applying a fix and the recompile, unsaved edits, changed lines, another
+  fix, feedback, no fix, invalid tool calls, gateway errors, the consent
+  prompt, the token quota, AI turned off for a user, and who may call the
+  endpoint. The `disabled/` variant runs with `AI_ENABLED=false`.
+- `instance-features/` – `/system/features` and the UI that hides itself
+  with it: AI assistant, GitHub Sync, Zotero and Mendeley, all off on the
+  default instance and all on in the `enabled/` variant, with git-bridge,
+  which GitHub Sync needs.
 - `template-gallery/` – publishing a project as a template, the gallery
   (categories, search, sort, pages), editing, overwriting and deleting
   templates, creating projects from them, permissions.
@@ -112,7 +130,8 @@ Things that need email (activation mails, password reset) are not tested.
   a user or a project.
 - `toolkit/services/` – extra containers a suite needs, e.g. `authentik/`, or
   the mocks of external services: `github-mock/` answers as github.com and
-  api.github.com, `tpr-mock/` as Zotero and Mendeley, on the toolkit's network
+  api.github.com, `tpr-mock/` as Zotero and Mendeley, `ai-mock/` as the OpenAI-compatible
+  gateway, Tavily and the documentation's MCP endpoint, on the toolkit's network
   with a throwaway CA that Overleaf is told to trust. `lib/` holds what the
   mocks share: the server plumbing, `make-tls` and `start-mock`.
   A suite lists them in its `services` file. `make setup` starts them next to

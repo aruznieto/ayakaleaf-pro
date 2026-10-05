@@ -1,6 +1,6 @@
-// Plumbing shared by the mocks of external services (github-mock, tpr-mock):
-// a tiny router, request and response helpers, and the two servers every
-// mock runs. Port 443 serves the impersonated hosts over TLS, with the
+// Plumbing shared by the mocks of external services (github-mock, tpr-mock,
+// ai-mock): a tiny router, request and response helpers, and the two servers
+// every mock runs. Port 443 serves the impersonated hosts over TLS, with the
 // certificate from bin/make-tls; port 8080 is the plain HTTP control API
 // the tests use.
 

@@ -49,6 +49,9 @@ jobs:
             github-sync,
             tpr-webmodule,
             python-runner,
+            workbench,
+            error-assistant,
+            instance-features,
             authentication/ldap,
             authentication/saml,
             authentication/oidc

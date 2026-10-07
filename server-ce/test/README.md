@@ -103,6 +103,16 @@ One folder per module in `toolkit/suites/`, named and nested like
   with it: AI assistant, GitHub Sync, Zotero and Mendeley, all off on the
   default instance and all on in the `enabled/` variant, with git-bridge,
   which GitHub Sync needs.
+- `admin-tools/` – the admin panel: who may open it, finding users by
+  email and id, creating accounts and activating them with the link from
+  Info, duplicate emails, changing names, emails, passwords and the admin
+  flag, the collaborator limit, turning AI off and the token usage,
+  disabling and enabling users one by one and in bulk, deleting accounts with
+  and without giving their projects to another user, restoring and purging
+  them, and the license tab. For projects: a user's projects and every
+  project, search by name, id and owner, trashing, deleting, restoring,
+  purging and downloading, and changing the owner of one or several projects,
+  with the old owner kept as editor.
 - `template-gallery/` – publishing a project as a template, the gallery
   (categories, search, sort, pages), editing, overwriting and deleting
   templates, creating projects from them, permissions.

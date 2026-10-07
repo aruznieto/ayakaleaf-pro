@@ -52,6 +52,7 @@ jobs:
             workbench,
             error-assistant,
             instance-features,
+            admin-tools,
             authentication/ldap,
             authentication/saml,
             authentication/oidc

@@ -311,6 +311,9 @@ export function UserListProvider({ children }: UserListProviderProps) {
   }, [])
 
   const removeUserFromView = useCallback((user: User) => {
+    setSearchResults(users =>
+      users?.filter(u => u.id !== user.id) ?? null
+    )
     setLoadedUsers(loadedUsers => {
       return loadedUsers.filter(u => u.id !== user.id)
     })

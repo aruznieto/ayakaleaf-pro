@@ -22,6 +22,7 @@ import OwnershipTransferHandler from '../../../../app/src/Features/Collaborators
 import HttpErrorHandler from '../../../../app/src/Features/Errors/HttpErrorHandler.mjs'
 import ErrorController from '../../../../app/src/Features/Errors/ErrorController.mjs'
 import Errors, { OError } from '../../../../app/src/Features/Errors/Errors.js'
+import EmailHelper from '../../../../app/src/Features/Helpers/EmailHelper.mjs'
 import HaveIBeenPwned from '../../../../app/src/Features/Authentication/HaveIBeenPwned.mjs'
 import { db } from '../../../../app/src/infrastructure/mongodb.mjs'
 import AuthenticationManager from '../../../../app/src/Features/Authentication/AuthenticationManager.mjs'
@@ -487,7 +488,7 @@ async function deleteUser(req, res, next) {
       skipEmail: !sendEmail,
     })
   } catch (err) {
-    logger.warn({ deleterUser, userId }, err.message)
+    logger.warn({ deleterUserId, userId }, err.message)
     if (toUserId) {
       try { // failed to delete user, try to transfer all projects back
         await OwnershipTransferHandler.promises.transferAllProjectsToUser({
@@ -516,9 +517,9 @@ async function purgeDeletedUser(req, res, next) {
 
   logger.debug({ deleterUserId, userId }, 'admin is trying to purge deleted user account')
   try {
-    UserDeleter.promises.expireDeletedUser(userId)
+    await UserDeleter.promises.expireDeletedUser(userId)
   } catch (err) {
-    logger.warn({ restorerId, userId }, err.message)
+    logger.warn({ deleterUserId, userId }, err.message)
     const message = 'Something went wrong. The user is already deleted?'
     return HttpErrorHandler.unprocessableEntity(req, res, message)
   }
@@ -613,7 +614,7 @@ async function updateUser(req, res, next) {
   let emailIsUpdated = false
   const newEmail = updatesInput.email?.trim().toLowerCase()
   if (newEmail != null && newEmail !== user.email) { // email is updated
-    if (newEmail.indexOf('@') === -1) {
+    if (!EmailHelper.parseEmail(newEmail)) {
       const message = req.i18n.translate('email_address_is_invalid')
       return HttpErrorHandler.unprocessableEntity(req, res, message)
     }
@@ -653,7 +654,7 @@ async function updateUser(req, res, next) {
         if ('collaborators' in features && (!Number.isInteger(features.collaborators) || features.collaborators < -1)) {
           return HttpErrorHandler.unprocessableEntity(req, res, 'invalid_collaborators')
         }
-        if ('compileTimeout' in features && (!Number.isInteger(features.compileTimeout) || features.compileTimeout <= 0)) {
+        if ('compileTimeout' in features && (!Number.isInteger(features.compileTimeout) || features.compileTimeout <= 0 || features.compileTimeout > 600)) {
           return HttpErrorHandler.unprocessableEntity(req, res, 'invalid_compile_timeout')
         }
       }

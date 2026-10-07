@@ -45,13 +45,20 @@ function DeleteUserModal({
   useEffect(() => {
     if (showModal) {
       setUsersToDisplay(displayUsers => displayUsers.length ? displayUsers : users)
-      setSendEmail(false)
-      setTransferProjects(false)
-      setNewOwner(null)
     } else {
       setUsersToDisplay([])
     }
   }, [showModal, users])
+
+  // Only when the modal opens: the list renders again with new user objects
+  // while it is open, which would drop the chosen options
+  useEffect(() => {
+    if (showModal) {
+      setSendEmail(false)
+      setTransferProjects(false)
+      setNewOwner(null)
+    }
+  }, [showModal])
 
   useEffect(() => {
     if (transferProjects) {

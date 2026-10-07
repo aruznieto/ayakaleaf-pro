@@ -169,16 +169,16 @@ function UserFeaturesTab({
   return (
     <>
       <OLFormGroup controlId="compileTimeout">
-        <OLFormLabel>Compile Timeout (In second, no more than 300s)</OLFormLabel>
+        <OLFormLabel>Compile Timeout (In second, no more than 600s)</OLFormLabel>
         <OLFormControl
           ref={autoFocusedRef}
           autoComplete="off"
           type="number"
           name="compileTimeout"
           onChange={handleFeatureNumChange}
-          value={userData.features?.compileTimeout || ''}
+          value={userData.features?.compileTimeout ?? ''}
           min={1}
-          max={300}
+          max={600}
           step={1}
         />
       </OLFormGroup>
@@ -190,7 +190,7 @@ function UserFeaturesTab({
           type="number"
           name="collaborators"
           onChange={handleFeatureNumChange}
-          value={userData.features?.collaborators || ''}
+          value={userData.features?.collaborators ?? ''}
           min={-1}
           step={1}
         />
@@ -269,7 +269,10 @@ function UpdateUserModal({
           setActivationLink(null)
         })
     }
-  }, [showModal, users])
+    // Only when the modal opens: the list renders again with new user
+    // objects while it is open, which would drop what was typed
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showModal])
 
   const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.currentTarget
@@ -289,15 +292,15 @@ function UpdateUserModal({
   const handleFeatureNumChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.currentTarget
     const numberValue = parseInt(value, 10)
-    if (!isNaN(numberValue)) {
-      setUserData(prev => ({
-        ...prev,
-        features: {
-          ...prev.features,
-          [name]: numberValue,
-        },
-      }))
-    }
+    // An emptied field keeps the saved value, but has to show as empty to
+    // be typed into again
+    setUserData(prev => ({
+      ...prev,
+      features: {
+        ...prev.features,
+        [name]: isNaN(numberValue) ? undefined : numberValue,
+      },
+    }))
   }
 
   const generatePassword = () => {

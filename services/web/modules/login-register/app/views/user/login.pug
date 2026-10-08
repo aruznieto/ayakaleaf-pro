@@ -48,9 +48,6 @@ block content
 										span(data-ol-inflight='idle') #{translate("login")}
 										span(hidden data-ol-inflight='pending') #{translate("logging_in")}…
 									a.float-end(href='/user/password/reset') #{translate("forgot_your_password")}?
-								if login_support_text
-									hr
-									p.text-center !{login_support_text}
 							if !localLoginDisabled && ((settings.ldap && settings.ldap.enable) || (settings.saml && settings.saml.enable) || (settings.oidc && settings.oidc.enable))
 								p.ciam-login-register-or-text-container
 									span.ciam-login-register-or-text #{translate("or")}
@@ -81,3 +78,6 @@ block content
 									)
 										span(data-ol-inflight="idle") #{settings.oidc.identityServiceName}
 										span(hidden data-ol-inflight="pending") #{translate("logging_in")}…
+							if login_support_text
+								hr
+								p.text-center !{login_support_text}

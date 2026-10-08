@@ -1,7 +1,7 @@
 import logger from "@overleaf/logger"
 import Settings from "@overleaf/settings"
 import RegisterController from './RegisterController.mjs'
-import LoginController from "./LoginController.mjs"
+import LoginController, { localLoginDisabled } from "./LoginController.mjs"
 import AuthenticationController from '../../../../app/src/Features/Authentication/AuthenticationController.mjs'
 import RateLimiterMiddleware from "../../../../app/src/Features/Security/RateLimiterMiddleware.mjs"
 import { RateLimiter } from "../../../../app/src/infrastructure/RateLimiter.mjs"
@@ -58,7 +58,7 @@ export default {
     // Public login
     // remove default login router
     webRouter.stack = webRouter.stack.filter(layer => {
-      return !(layer.route && layer.route.path === '/login' && layer.route.methods.get)
+      return !(layer.route && layer.route.path === '/login' && (layer.route.methods.get || (layer.route.methods.post && localLoginDisabled())))
     })
 
     webRouter.get('/login', LoginController.loginPage)

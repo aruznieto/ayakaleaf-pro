@@ -106,9 +106,14 @@ describe('running Python', function () {
     openScript('hello.py')
     run()
     waitForRun()
-    outputLines('stdout')
-      .then(lines => [...lines].map(l => l.textContent))
-      .should('deep.equal', ['hello from python', '1024', '42'])
+    // Retry the whole read: the last line can arrive after the others
+    outputLines('stdout').should(lines =>
+      expect([...lines].map(l => l.textContent)).to.deep.equal([
+        'hello from python',
+        '1024',
+        '42',
+      ])
+    )
   })
 
   it('shows stderr and the error a script raises', function () {
@@ -185,9 +190,12 @@ describe('running Python', function () {
     cy.get('.cm-content').type('{ctrl+end}\nprint("after the edit")')
     run()
     waitForRun()
-    outputLines('stdout')
-      .then(lines => [...lines].map(l => l.textContent))
-      .should('deep.equal', ['before the edit', 'after the edit'])
+    outputLines('stdout').should(lines =>
+      expect([...lines].map(l => l.textContent)).to.deep.equal([
+        'before the edit',
+        'after the edit',
+      ])
+    )
   })
 
   it('keeps the last 100 lines of output', function () {

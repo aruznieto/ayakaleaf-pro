@@ -1283,7 +1283,6 @@ module.exports = {
   },
   enableGitBridge: process.env.GIT_BRIDGE_ENABLED === 'true',
   enableGithubSync: process.env.GITHUB_SYNC_ENABLED === 'true',
-  disableLocalLogin: process.env.OVERLEAF_DISABLE_LOCAL_LOGIN === 'true',
   unsupportedBrowsers: {
     ie: '<=11',
     safari: '<15',

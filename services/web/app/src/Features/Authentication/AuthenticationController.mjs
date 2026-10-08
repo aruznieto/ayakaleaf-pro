@@ -31,7 +31,6 @@ import { expressify, promisify } from '@overleaf/promise-utils'
 import { handleAuthenticateErrors } from './AuthenticationErrors.mjs'
 import EmailHelper from '../Helpers/EmailHelper.mjs'
 import SplitTestHandler from '../SplitTests/SplitTestHandler.mjs'
-import Features from '../../infrastructure/Features.mjs'
 
 const { hasAdminAccess } = AdminAuthorizationHelper
 
@@ -136,15 +135,6 @@ const AuthenticationController = {
   },
 
   passportLogin(req, res, next) {
-    if (Features.localLoginDisabled()) {
-      return res.status(403).json({
-        message: {
-          type: 'error',
-          text: 'Local login is disabled. Please use an external identity provider.',
-        },
-      })
-    }
-
     // This function is middleware which wraps the passport.authenticate middleware,
     // so we can send back our custom `{message: {text: "", type: ""}}` responses on failure,
     // and send a `{redir: ""}` response on success

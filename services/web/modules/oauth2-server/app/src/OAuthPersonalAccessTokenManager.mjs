@@ -62,7 +62,7 @@ const PersonalAccessTokenManager = {
 
         // Generate a new access token
         let createdAt = new Date()
-        let accessTokenExpiresAt = createdAt
+        let accessTokenExpiresAt = new Date(createdAt)
 
         // access token validity is 1 year
         accessTokenExpiresAt.setFullYear(accessTokenExpiresAt.getFullYear() + 1)
@@ -80,7 +80,7 @@ const PersonalAccessTokenManager = {
         }
 
         // Save to database
-        db.oauthAccessTokens.insertOne(
+        await db.oauthAccessTokens.insertOne(
             accessTokenDoc
         )
         // Currently we use OAuth2Server's ClientID Empty to save personal access tokens

@@ -90,7 +90,7 @@ function LinkingGitBridgeTable() {
                             </Col>
                             <Col md={2} className="d-none d-sm-block">
                                 <EmailCell>
-                                    {moment(token.created_at).format('Do MMM YYYY')}
+                                    {moment(token.createdAt).format('Do MMM YYYY')}
                                 </EmailCell>
                             </Col>
                             <Col md={2} className="d-none d-sm-block">

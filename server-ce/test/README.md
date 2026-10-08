@@ -51,6 +51,11 @@ One folder per module in `toolkit/suites/`, named and nested like
   with the git CLI: binary files, folders, renames, deletes, out-of-date
   pushes, and access for invited and link-shared editors, reviewers and
   viewers.
+- `oauth2-server/` – the Git authentication tokens in the settings: generating,
+  the token shown once, the table with its dates and last use, cancelling and
+  deleting, the 10 token limit, and the API behind it: one year validity, no
+  secrets in the list, `/oauth/token/info` for git-bridge, logins and other
+  users' tokens. Git-bridge is on, the settings only show the tokens with it.
 - `open-in-overleaf/` – the `/docs` endpoint: snippets, encoded snippets,
   data URLs with names, main document and engine, zips, refused and internal
   URLs, the login for signed-out visitors, and the `/devs` page. The

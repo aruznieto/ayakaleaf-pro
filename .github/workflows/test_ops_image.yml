@@ -42,6 +42,7 @@ jobs:
             symbol-palette,
             template-gallery,
             git-bridge,
+            oauth2-server,
             track-changes,
             open-in-overleaf,
             learn,

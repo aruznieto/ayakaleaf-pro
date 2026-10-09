@@ -135,10 +135,13 @@ jobs:
           fi
           tag=$(TZ='Asia/Shanghai' date +'%Y%m%d%H%M')-$github_short_sha
           echo "Building tag: $tag"
-          docker tag sharelatex/sharelatex:latest ${{env.DOCKER_REGISTRY}}/${{env.IMAGE_NAME}}/ops:latest
           docker tag sharelatex/sharelatex:latest ${{env.DOCKER_REGISTRY}}/${{env.IMAGE_NAME}}/ops:$tag
-          docker push ${{env.DOCKER_REGISTRY}}/${{env.IMAGE_NAME}}/ops:latest
           docker push ${{env.DOCKER_REGISTRY}}/${{env.IMAGE_NAME}}/ops:$tag
+          # Scheduled tests use latest; only server-pro builds may update it.
+          if [ "$GITHUB_EVENT_NAME" != "pull_request" ] && [ "$GITHUB_REF" = "refs/heads/server-pro" ]; then
+            docker tag sharelatex/sharelatex:latest ${{env.DOCKER_REGISTRY}}/${{env.IMAGE_NAME}}/ops:latest
+            docker push ${{env.DOCKER_REGISTRY}}/${{env.IMAGE_NAME}}/ops:latest
+          fi
 
       # --- Retention Policy: Delete old images ---
       - name: Delete old images

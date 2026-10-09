@@ -39,6 +39,7 @@ jobs:
             launchpad,
             login-register,
             sandboxed-compiles,
+            pandoc,
             symbol-palette,
             template-gallery,
             git-bridge,

@@ -8,11 +8,11 @@ import { User } from '../../../../../../../types/user/api'
 import SendRegEmailModal from '../../../modals/send-reg-email-modal'
 import { performSendRegEmail } from '../../../../util/user-actions'
 
-function SendRegEmailsButton({ action }: { action: string }) {
+function SendRegEmailsButton() {
   const { selectedUsers, toggleSelectedUser } =
     useUserListContext()
   const { t } = useTranslation()
-  const text = t(action)
+  const text = t('resend')
 
   const [showModal, setShowModal] = useState(false)
   const isMounted = useIsMounted()

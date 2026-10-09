@@ -1,6 +1,5 @@
 import logger from '@overleaf/logger'
 import { callbackify } from '@overleaf/promise-utils'
-import UserGetter from '../../../../app/src/Features/User/UserGetter.mjs'
 import LinkedFilesHandler from '../../../../app/src/Features/LinkedFiles/LinkedFilesHandler.mjs'
 import LinkedFilesErrors from '../../../../app/src/Features/LinkedFiles/LinkedFilesErrors.mjs'
 import MendeleyApiClient from './MendeleyApiClient.mjs'
@@ -22,10 +21,9 @@ const {
  * linkedFileData shape:
  *   {
  *     provider: 'mendeley'
- *     mendeleyGroupId?: string
+ *     group_id?: string
  *     importedAt: Date | string
- *     importedByUserId?: string
- *     importedByName?: string
+ *     importer_id?: string
  *   }
  */
 async function createLinkedFile(
@@ -36,12 +34,11 @@ async function createLinkedFile(
   userId
 ) {
   logger.debug(
-    { projectId, userId, groupId: linkedFileData.mendeleyGroupId },
+    { projectId, userId, groupId: linkedFileData.group_id },
     'creating Mendeley linked file'
   )
 
-  linkedFileData.importedByUserId = userId
-  linkedFileData.importedByName = await _getUserName(userId)
+  linkedFileData.importer_id = userId
 
   const bibtex = await _getBibtex(linkedFileData)
 
@@ -65,12 +62,12 @@ async function refreshLinkedFile(
   userId
 ) {
   logger.debug(
-    { projectId, userId, groupId: linkedFileData.mendeleyGroupId },
+    { projectId, userId, groupId: linkedFileData.group_id },
     'refreshing Mendeley linked file'
   )
 
   // Refresh runs on the importer's credentials, so only they can trigger it.
-  if (String(linkedFileData.importedByUserId) !== String(userId)) {
+  if (String(linkedFileData.importer_id) !== String(userId)) {
     throw new NotOriginalImporterError('not the original importer')
   }
 
@@ -88,12 +85,12 @@ async function refreshLinkedFile(
 }
 
 async function _getBibtex(linkedFileData) {
-  const userId = linkedFileData.importedByUserId
+  const userId = linkedFileData.importer_id
   try {
-    if (linkedFileData.mendeleyGroupId) {
+    if (linkedFileData.group_id) {
       return await MendeleyApiClient.getGroupLibraryBibtex(
         userId,
-        linkedFileData.mendeleyGroupId
+        linkedFileData.group_id
       )
     } else {
       return await MendeleyApiClient.getUserLibraryBibtex(userId)
@@ -115,36 +112,14 @@ async function _getBibtex(linkedFileData) {
 function _sanitizeData(data) {
   return {
     provider: 'mendeley',
-    ...(data.mendeleyGroupId && {
-      mendeleyGroupId: data.mendeleyGroupId,
+    ...(data.group_id && {
+      group_id: data.group_id,
     }),
     importedAt: data.importedAt,
-    ...(data.importedByUserId && {
-      importedByUserId: data.importedByUserId,
+    ...(data.importer_id && {
+      importer_id: String(data.importer_id),
     }),
-    importedByName: data.importedByName || 'Unknown',
   }
-}
-
-async function _getUserName(userId) {
-  let user = null
-  try {
-    user = await UserGetter.promises.getUser(userId, {
-      email: 1,
-      first_name: 1,
-      last_name: 1,
-    })
-  } catch (err) {
-    logger.error({ userId, err }, 'failed to get user info')
-  }
-  if (!user) return 'Unknown'
-
-  const { email, first_name, last_name } = user
-  const name =
-    first_name || last_name
-      ? [first_name, last_name].filter(n => n != null).join(' ')
-      : email
-  return name || 'Unknown'
 }
 
 export default {

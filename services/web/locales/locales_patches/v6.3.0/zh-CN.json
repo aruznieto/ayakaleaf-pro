@@ -1333,7 +1333,7 @@
   "imported_from_readcube_at_date": "于 __formattedDate__（__relativeDate__）从 ReadCube 导入",
   "imported_from_the_output_of_another_project_at_date": "于 __formattedDate__ __relativeDate__，从<0>另一个项目</0>的输出导入: __sourceOutputFilePathHTML__",
   "imported_from_zotero_at_date": "于 __formattedDate__ __relativeDate__，从Zotero导入",
-  "importing": "正在倒入",
+  "importing": "正在导入",
   "importing_and_merging_changes_in_github": "正在导入合并GitHub中的更改",
   "in_editor_chat": "编辑器内聊天",
   "in_editor_chat_managed_by_overleaf_support": "编辑器内聊天由 Overleaf 支持团队管理。",

@@ -35,10 +35,15 @@ export function TPRFileViewInfo({ file }: TPRFileViewInfoProps) {
     <p>
       <LinkedFileIcon />
       &nbsp;
-      {t(provider.i18n.importedAtDate, {
-        formattedDate,
-        relativeDate: relative,
-      })}
+      {provider.id === 'zotero'
+        ? t('imported_from_zotero_at_date', {
+            formattedDate,
+            relativeDate: relative,
+          })
+        : t('imported_from_mendeley_at_date', {
+            formattedDate,
+            relativeDate: relative,
+          })}
     </p>
   )
 }

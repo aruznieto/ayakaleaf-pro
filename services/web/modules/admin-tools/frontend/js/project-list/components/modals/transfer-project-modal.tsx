@@ -92,6 +92,7 @@ function TransferProjectModal({
       handleCloseModal={handleCloseModal}
       projects={projects}
       options={options}
+      actionIsDisabled={!newOwner}
     >
       <p>{t('their_projects_will_be_transferred_to_another_user')}</p>
       <ProjectsList projects={projects} projectsToDisplay={projectsToDisplay} />

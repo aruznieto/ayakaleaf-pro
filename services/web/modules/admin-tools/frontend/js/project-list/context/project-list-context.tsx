@@ -271,6 +271,9 @@ export function ProjectListProvider({ projectsOwnerId, children }: ProjectListPr
   )
 
   const updateProjectViewData = useCallback((newProjectData: Project) => {
+    setSearchResults(projects =>
+      projects?.map(p => p.id === newProjectData.id ? newProjectData : p) ?? null
+    )
     setLoadedProjects(loadedProjects => {
       return loadedProjects.map(p =>
         p.id === newProjectData.id ? { ...newProjectData } : p
@@ -279,6 +282,9 @@ export function ProjectListProvider({ projectsOwnerId, children }: ProjectListPr
   }, [])
 
   const removeProjectFromView = useCallback((project: Project) => {
+    setSearchResults(projects =>
+      projects?.filter(p => p.id !== project.id) ?? null
+    )
     setLoadedProjects(loadedProjects => {
       return loadedProjects.filter(p => p.id !== project.id)
     })

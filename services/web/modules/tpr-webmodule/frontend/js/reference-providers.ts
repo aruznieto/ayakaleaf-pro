@@ -69,6 +69,6 @@ export function isOriginalImporter(
   file: BinaryFile<keyof LinkedFileData>,
   userId: string | null | undefined
 ): boolean {
-  const importedByUserId = (file.linkedFileData as any)?.importedByUserId
-  return Boolean(importedByUserId && userId && importedByUserId === userId)
+  const importerId = (file.linkedFileData as any)?.importer_id
+  return Boolean(importerId && userId && importerId === userId)
 }

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { debugConsole } from '@/utils/debugging'
 import { postJSON } from '@/infrastructure/fetch-json'
 import { useEditorManagerContext } from '@/features/ide-react/context/editor-manager-context'
+import { useReferencesContext } from '@/features/ide-react/context/references-context'
 import useAsync from '@/shared/hooks/use-async'
 import {
   OLModalBody,
@@ -35,6 +36,7 @@ const GitSyncMergeModal = ({
   const { t } = useTranslation()
   const { error, isError, isLoading, setError, runAsync } = useAsync<ProjectSyncState>()
   const { setIgnoringExternalUpdates } = useEditorManagerContext()
+  const { indexAllReferences } = useReferencesContext()
 
   useEffect(() => {
     if (modalStatus !== 'run-merge' &&
@@ -49,11 +51,16 @@ const GitSyncMergeModal = ({
         body: { message: commitMessage, claimConflictIsResolved },
       })
     )
-      .then(data => {
+      .then(async data => {
         switch (data.mergeStatus) {
 
           case 'clean':
             setModalStatus('merge-overview')
+
+            // reindex references so .bib files pulled from GitHub are searchable
+            await postJSON(`/project/${projectId}/flush`)
+              .catch(e => debugConsole.error(e))
+            indexAllReferences(true)
             break
 
           case 'conflict':
@@ -82,6 +89,7 @@ const GitSyncMergeModal = ({
     commitMessage,
     runAsync,
     setIgnoringExternalUpdates,
+    indexAllReferences,
   ])
 
   if (!isLoading && !isError) return

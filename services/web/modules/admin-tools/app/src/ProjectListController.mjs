@@ -310,12 +310,12 @@ async function untrashProjectForUser(req, res) {
 async function undeleteProject(req, res) {
   const projectId = req.params.project_id
   const { userId } = req.body
-  const undelededProject = await ProjectDeleter.promises.undeleteProject(projectId, { userId })
+  await ProjectDeleter.promises.undeleteProject(projectId, { userId })
   await ProjectDeleter.promises.untrashProject(projectId, userId)
+  // undeleteProject returns nothing, the restored name has a suffix
+  const { name } = await Project.findById(projectId, { name: 1 }).lean()
 
-  return res.json({
-    name: undelededProject.name,
-  })
+  return res.json({ name })
 }
 
 async function purgeDeletedProject(req, res) {

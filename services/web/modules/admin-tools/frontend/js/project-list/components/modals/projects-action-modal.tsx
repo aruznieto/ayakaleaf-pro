@@ -23,6 +23,7 @@ type ProjectsActionModalProps = {
   projects: Array<Project>
   showModal: boolean
   options?: any
+  actionIsDisabled?: boolean
   children?: React.ReactNode
 }
 
@@ -37,6 +38,7 @@ function ProjectsActionModal({
   showModal,
   projects,
   options,
+  actionIsDisabled,
   children,
 }: ProjectsActionModalProps) {
   const { t } = useTranslation()
@@ -131,7 +133,7 @@ function ProjectsActionModal({
         <OLButton
           variant={variant}
           onClick={() => handleActionForProjects(projects, options)}
-          disabled={isProcessing}
+          disabled={isProcessing || actionIsDisabled}
         >
           {actionLabel}
         </OLButton>

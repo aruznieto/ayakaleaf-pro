@@ -24,6 +24,8 @@
 ## Ayakaleaf Pro Edition
 Ayakaleaf Pro is an enhanced version of Overleaf with almost all features and capabilities. For details, please check [Ayakaleaf Pro](https://ayakaleaf-pro.ayaka.space) page. Features in Ayakaleaf Pro include: 
 
+- AI Chat Assistant (Features in SaaS Platform)
+- Error Assistant (Features in SaaS Platform)
 - Pandoc Import/Export (Features in SaaS Platform)
 - Python Script Runner (Features in SaaS Platform)
 - 2-way GitHub Sync (Features in SaaS Platform)

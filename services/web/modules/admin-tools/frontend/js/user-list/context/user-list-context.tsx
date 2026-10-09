@@ -300,6 +300,9 @@ export function UserListProvider({ children }: UserListProviderProps) {
   )
 
   const updateUserViewData = useCallback((newUserData: User) => {
+    setSearchResults(users =>
+      users?.map(user => user.id === newUserData.id ? newUserData : user) ?? null
+    )
     setLoadedUsers(loadedUsers => {
       return loadedUsers.map(u =>
         u.id === newUserData.id ? { ...newUserData } : u
@@ -308,6 +311,9 @@ export function UserListProvider({ children }: UserListProviderProps) {
   }, [])
 
   const removeUserFromView = useCallback((user: User) => {
+    setSearchResults(users =>
+      users?.filter(u => u.id !== user.id) ?? null
+    )
     setLoadedUsers(loadedUsers => {
       return loadedUsers.filter(u => u.id !== user.id)
     })

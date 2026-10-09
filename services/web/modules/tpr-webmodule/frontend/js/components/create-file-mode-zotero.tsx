@@ -105,13 +105,17 @@ function ZoteroCreateFilePane() {
       const data: Record<string, string> = {}
 
       if (selectedGroupId) {
-        data.zoteroGroupId = selectedGroupId
+        data.group_id = selectedGroupId
       }
 
       finishCreatingLinkedFile({
         name,
         provider: 'zotero',
         data,
+      }).then(result => {
+        // Reindex the references here and, through the broadcast, for the
+        // collaborators; undefined when creating the file failed
+        if (result) window.dispatchEvent(new CustomEvent('reference:added'))
       })
     },
     [
